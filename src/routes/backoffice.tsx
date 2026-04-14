@@ -49,6 +49,7 @@ function BackofficePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || role !== 'admin') {
@@ -61,16 +62,18 @@ function BackofficePage() {
     if (role !== 'admin') return;
     
     const fetchData = async () => {
-      const [ordersRes, productsRes, clientsRes, warehousesRes] = await Promise.all([
+      const [ordersRes, productsRes, clientsRes, warehousesRes, categoriesRes] = await Promise.all([
         supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name))').order('created_at', { ascending: false }),
         supabase.from('products').select('*, categories(name, warehouses(name))').order('name'),
         supabase.from('clients').select('*').order('name'),
         supabase.from('warehouses').select('*').order('name'),
+        supabase.from('categories').select('*, warehouses(name)').order('name'),
       ]);
       setOrders(ordersRes.data ?? []);
       setProducts(productsRes.data ?? []);
       setClients(clientsRes.data ?? []);
       setWarehouses(warehousesRes.data ?? []);
+      setCategories(categoriesRes.data ?? []);
     };
     fetchData();
   }, [role]);
