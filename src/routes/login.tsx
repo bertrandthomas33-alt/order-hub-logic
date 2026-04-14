@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,14 +8,6 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 export const Route = createFileRoute('/login')({
-  validateSearch: (search) => ({
-    redirect: (search.redirect as string) || '/',
-  }),
-  beforeLoad: ({ context, search }) => {
-    if ((context as any).auth?.isAuthenticated) {
-      throw redirect({ to: search.redirect as string });
-    }
-  },
   head: () => ({
     meta: [
       { title: 'Connexion — JDC Distribution' },
@@ -30,7 +22,6 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const search = Route.useSearch();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +29,24 @@ function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast.success('Connexion réussie');
-      navigate({ to: search.redirect || '/' });
+
+      // Fetch role to redirect appropriately
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single();
+        
+        toast.success('Connexion réussie');
+        if (roleData?.role === 'admin') {
+          navigate({ to: '/backoffice' });
+        } else {
+          navigate({ to: '/catalogue' });
+        }
+      }
     } catch (err: any) {
       toast.error('Erreur de connexion', { description: err.message });
     } finally {
