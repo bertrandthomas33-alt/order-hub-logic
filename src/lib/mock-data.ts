@@ -22,6 +22,26 @@ export interface Order {
   createdAt: string;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  contact: string;
+  email: string;
+  phone: string;
+  address: string;
+  active: boolean;
+}
+
+export const clients: Client[] = [
+  { id: 'PDV-001', name: 'Le Petit Bistro', contact: 'Marc Dupont', email: 'marc@petitbistro.fr', phone: '04 72 00 11 22', address: 'Lyon 2e', active: true },
+  { id: 'PDV-002', name: 'Salade & Co', contact: 'Julie Martin', email: 'julie@saladeco.fr', phone: '04 72 00 33 44', address: 'Lyon 6e', active: true },
+  { id: 'PDV-003', name: 'Fresh Bowl', contact: 'Thomas Leroy', email: 'thomas@freshbowl.fr', phone: '04 72 00 55 66', address: 'Lyon 3e', active: true },
+  { id: 'PDV-004', name: 'Wrap Avenue', contact: 'Sophie Blanc', email: 'sophie@wrapavenue.fr', phone: '04 72 00 77 88', address: 'Villeurbanne', active: true },
+  { id: 'PDV-005', name: 'Green Kitchen', contact: 'Paul Moreau', email: 'paul@greenkitchen.fr', phone: '04 72 00 99 00', address: 'Lyon 7e', active: false },
+  { id: 'PDV-006', name: 'Bowl & Juice', contact: 'Emma Roux', email: 'emma@bowljuice.fr', phone: '04 72 01 11 22', address: 'Lyon 1er', active: true },
+  { id: 'PDV-007', name: 'La Cantine Verte', contact: 'Lucas Petit', email: 'lucas@cantineverte.fr', phone: '04 72 01 33 44', address: 'Lyon 8e', active: true },
+];
+
 export const categories = [
   { id: 'soupes', name: 'Soupes', icon: '🍜' },
   { id: 'antipasti', name: 'Antipasti', icon: '🫒' },
