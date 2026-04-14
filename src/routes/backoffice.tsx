@@ -3,7 +3,8 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse } from 'lucide-react';
+import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil } from 'lucide-react';
+import { EditProductDialog } from '@/components/EditProductDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -48,6 +49,7 @@ function BackofficePage() {
   const [products, setProducts] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated || role !== 'admin') {
@@ -60,16 +62,18 @@ function BackofficePage() {
     if (role !== 'admin') return;
     
     const fetchData = async () => {
-      const [ordersRes, productsRes, clientsRes, warehousesRes] = await Promise.all([
+      const [ordersRes, productsRes, clientsRes, warehousesRes, categoriesRes] = await Promise.all([
         supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name))').order('created_at', { ascending: false }),
         supabase.from('products').select('*, categories(name, warehouses(name))').order('name'),
         supabase.from('clients').select('*').order('name'),
         supabase.from('warehouses').select('*').order('name'),
+        supabase.from('categories').select('*, warehouses(name)').order('name'),
       ]);
       setOrders(ordersRes.data ?? []);
       setProducts(productsRes.data ?? []);
       setClients(clientsRes.data ?? []);
       setWarehouses(warehousesRes.data ?? []);
+      setCategories(categoriesRes.data ?? []);
     };
     fetchData();
   }, [role]);
@@ -154,7 +158,9 @@ function BackofficePage() {
         </div>
 
         {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} />}
-        {activeTab === 'produits' && <ProduitsTable products={products} search={search} />}
+        {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} search={search} onRefresh={() => {
+          supabase.from('products').select('*, categories(name, warehouses(name))').order('name').then(r => setProducts(r.data ?? []));
+        }} />}
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} />}
       </div>
     </div>
@@ -217,7 +223,8 @@ function CommandesTable({ orders, search }: { orders: any[]; search: string }) {
   );
 }
 
-function ProduitsTable({ products, search }: { products: any[]; search: string }) {
+function ProduitsTable({ products, categories, search, onRefresh }: { products: any[]; categories: any[]; search: string; onRefresh: () => void }) {
+  const [editProduct, setEditProduct] = useState<any | null>(null);
   const filtered = products.filter(
     (p: any) =>
       p.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -225,59 +232,74 @@ function ProduitsTable({ products, search }: { products: any[]; search: string }
   );
 
   return (
-    <div className="rounded-2xl border border-border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nom</TableHead>
-            <TableHead>Catégorie</TableHead>
-            <TableHead>Entrepôt</TableHead>
-            <TableHead className="text-right">Prix</TableHead>
-            <TableHead>Unité</TableHead>
-            <TableHead>Actif</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filtered.length === 0 ? (
+    <>
+      <div className="rounded-2xl border border-border bg-card">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
+              <TableHead>Nom</TableHead>
+              <TableHead>Catégorie</TableHead>
+              <TableHead>Entrepôt</TableHead>
+              <TableHead className="text-right">Prix</TableHead>
+              <TableHead>Unité</TableHead>
+              <TableHead>Actif</TableHead>
+              <TableHead className="w-10"></TableHead>
             </TableRow>
-          ) : (
-            filtered.map((product: any) => (
-              <TableRow key={product.id}>
-                <TableCell>
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.description}</p>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
-                    {product.categories?.name || '—'}
-                  </span>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {product.categories?.warehouses?.name || '—'}
-                </TableCell>
-                <TableCell className="text-right font-medium">{Number(product.price).toFixed(2)} €</TableCell>
-                <TableCell className="text-muted-foreground">/ {product.unit}</TableCell>
-                <TableCell>
-                  {product.active ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                      <Check className="h-3 w-3" /> Oui
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                      <X className="h-3 w-3" /> Non
-                    </span>
-                  )}
-                </TableCell>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ) : (
+              filtered.map((product: any) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">{product.description}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                      {product.categories?.name || '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {product.categories?.warehouses?.name || '—'}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{Number(product.price).toFixed(2)} €</TableCell>
+                  <TableCell className="text-muted-foreground">/ {product.unit}</TableCell>
+                  <TableCell>
+                    {product.active ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                        <Check className="h-3 w-3" /> Oui
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                        <X className="h-3 w-3" /> Non
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => setEditProduct(product)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <EditProductDialog
+        product={editProduct}
+        categories={categories}
+        open={!!editProduct}
+        onOpenChange={(open) => { if (!open) setEditProduct(null); }}
+        onSaved={onRefresh}
+      />
+    </>
   );
 }
 
