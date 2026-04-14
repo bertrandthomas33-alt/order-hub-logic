@@ -1,7 +1,13 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "sonner";
+import type { AuthState } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth";
 
 import appCss from "../styles.css?url";
+
+interface RouterContext {
+  auth: AuthState;
+}
 
 function NotFoundComponent() {
   return (
@@ -9,17 +15,17 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">
-          Page not found
+          Page non trouvée
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+          La page que vous recherchez n'existe pas.
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Go home
+            Retour à l'accueil
           </Link>
         </div>
       </div>
@@ -27,19 +33,13 @@ function NotFoundComponent() {
   );
 }
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { title: "JDC Distribution — Plateforme de commande" },
+      { name: "description", content: "Solution de commande centralisée pour vos points de vente." },
     ],
     links: [
       {
@@ -55,7 +55,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <head>
         <HeadContent />
       </head>
@@ -68,10 +68,36 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const auth = useAuth();
+
   return (
-    <>
+    <RouterContextProvider auth={auth}>
       <Outlet />
       <Toaster position="top-right" richColors />
-    </>
+    </RouterContextProvider>
   );
+}
+
+function RouterContextProvider({ auth, children }: { auth: AuthState; children: React.ReactNode }) {
+  // We need to update router context with auth state
+  // TanStack Router gets context from the router config, but we update it here
+  const router = Route.useRouter();
+  
+  // Update router context with current auth state
+  if (router.options.context) {
+    (router.options.context as any).auth = auth;
+  }
+
+  if (auth.isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
