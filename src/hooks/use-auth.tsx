@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -13,7 +13,15 @@ export interface AuthState {
   logout: () => Promise<void>;
 }
 
+const AuthContext = createContext<AuthState | null>(null);
+
 export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<'admin' | 'pdv' | null>(null);
@@ -28,9 +36,10 @@ export function useAuth(): AuthState {
       .limit(1)
       .single();
 
-    setRole((roleData?.role as 'admin' | 'pdv') ?? null);
+    const r = (roleData?.role as 'admin' | 'pdv') ?? null;
+    setRole(r);
 
-    if (roleData?.role === 'pdv') {
+    if (r === 'pdv') {
       const { data: clientData } = await supabase
         .from('clients')
         .select('id')
@@ -45,11 +54,11 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchRoleAndClient(session.user.id);
+      async (_event, sess) => {
+        setSession(sess);
+        setUser(sess?.user ?? null);
+        if (sess?.user) {
+          await fetchRoleAndClient(sess.user.id);
         } else {
           setRole(null);
           setClientId(null);
@@ -58,11 +67,11 @@ export function useAuth(): AuthState {
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchRoleAndClient(session.user.id);
+    supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
+      setSession(sess);
+      setUser(sess?.user ?? null);
+      if (sess?.user) {
+        await fetchRoleAndClient(sess.user.id);
       }
       setIsLoading(false);
     });
@@ -77,9 +86,11 @@ export function useAuth(): AuthState {
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
+    setRole(null);
+    setClientId(null);
   }, []);
 
-  return {
+  const value: AuthState = {
     isAuthenticated: !!user,
     isLoading,
     user,
@@ -89,4 +100,17 @@ export function useAuth(): AuthState {
     login,
     logout,
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
