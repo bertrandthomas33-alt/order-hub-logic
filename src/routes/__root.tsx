@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts, useRouter } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import type { AuthState } from "@/hooks/use-auth";
 import { useAuth } from "@/hooks/use-auth";
@@ -79,9 +79,7 @@ function RootComponent() {
 }
 
 function RouterContextProvider({ auth, children }: { auth: AuthState; children: React.ReactNode }) {
-  // We need to update router context with auth state
-  // TanStack Router gets context from the router config, but we update it here
-  const router = Route.useRouter();
+  const router = useRouter();
   
   // Update router context with current auth state
   if (router.options.context) {
