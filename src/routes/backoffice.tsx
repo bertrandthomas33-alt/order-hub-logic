@@ -3,7 +3,8 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse } from 'lucide-react';
+import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil } from 'lucide-react';
+import { EditProductDialog } from '@/components/EditProductDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -154,7 +155,9 @@ function BackofficePage() {
         </div>
 
         {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} />}
-        {activeTab === 'produits' && <ProduitsTable products={products} search={search} />}
+        {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} search={search} onRefresh={() => {
+          supabase.from('products').select('*, categories(name, warehouses(name))').order('name').then(r => setProducts(r.data ?? []));
+        }} />}
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} />}
       </div>
     </div>
