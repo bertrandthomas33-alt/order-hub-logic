@@ -1,0 +1,130 @@
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface EditProductDialogProps {
+  product: any | null;
+  categories: any[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => void;
+}
+
+export function EditProductDialog({ product, categories, open, onOpenChange, onSaved }: EditProductDialogProps) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [unit, setUnit] = useState('kg');
+  const [categoryId, setCategoryId] = useState('');
+  const [active, setActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (product) {
+      setName(product.name || '');
+      setDescription(product.description || '');
+      setPrice(String(product.price ?? ''));
+      setUnit(product.unit || 'kg');
+      setCategoryId(product.category_id || '');
+      setActive(product.active ?? true);
+    }
+  }, [product]);
+
+  const handleSave = async () => {
+    if (!name.trim() || !categoryId || !price) {
+      toast.error('Veuillez remplir les champs obligatoires');
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from('products')
+      .update({
+        name: name.trim(),
+        description: description.trim() || null,
+        price: Number(price),
+        unit,
+        category_id: categoryId,
+        active,
+      })
+      .eq('id', product.id);
+
+    setSaving(false);
+    if (error) {
+      toast.error('Erreur lors de la sauvegarde');
+      console.error(error);
+    } else {
+      toast.success('Produit mis à jour');
+      onOpenChange(false);
+      onSaved();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Modifier le produit</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="edit-name">Nom *</Label>
+            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="edit-desc">Description</Label>
+            <Textarea id="edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-price">Prix (€) *</Label>
+              <Input id="edit-price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-unit">Unité</Label>
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kg">kg</SelectItem>
+                  <SelectItem value="pièce">pièce</SelectItem>
+                  <SelectItem value="litre">litre</SelectItem>
+                  <SelectItem value="barquette">barquette</SelectItem>
+                  <SelectItem value="sachet">sachet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label>Catégorie *</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Choisir une catégorie" /></SelectTrigger>
+              <SelectContent>
+                {categories.map((cat: any) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name} — {cat.warehouses?.name || ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch id="edit-active" checked={active} onCheckedChange={setActive} />
+            <Label htmlFor="edit-active">Produit actif</Label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
