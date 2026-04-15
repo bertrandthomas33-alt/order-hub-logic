@@ -453,7 +453,8 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
               <TableHead>Nom</TableHead>
               <TableHead>Catégorie</TableHead>
               <TableHead>Entrepôt</TableHead>
-              <TableHead className="text-right">Prix</TableHead>
+              <TableHead className="text-right">P. Revient</TableHead>
+              <TableHead className="text-right">P. Vente</TableHead>
               <TableHead>Unité</TableHead>
               <TableHead className="text-right">Stock</TableHead>
               <TableHead>Actif</TableHead>
@@ -463,7 +464,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-              <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
+              <TableCell colSpan={10} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
               </TableRow>
             ) : (
               filtered.map((product: any) => (
@@ -491,6 +492,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
                   <TableCell className="text-xs text-muted-foreground">
                     {product.categories?.warehouses?.name || '—'}
                   </TableCell>
+                  <TableCell className="text-right text-muted-foreground">{Number(product.cost_price ?? 0).toFixed(2)} €</TableCell>
                   <TableCell className="text-right font-medium">{Number(product.price).toFixed(2)} €</TableCell>
                   <TableCell className="text-muted-foreground">/ {product.unit}</TableCell>
                   <TableCell className="text-right">{Number(product.stock ?? 0)}</TableCell>
