@@ -3,6 +3,8 @@ import type { Product, CartItem } from './mock-data';
 
 interface CartStore {
   items: CartItem[];
+  deliveryDate: Date | undefined;
+  setDeliveryDate: (date: Date | undefined) => void;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
