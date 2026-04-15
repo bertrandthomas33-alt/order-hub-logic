@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { createServerFn } from '@tanstack/react-start';
-import { useServerFn } from '@tanstack/react-start';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const createClientSchema = z.object({
@@ -17,63 +16,28 @@ const createClientSchema = z.object({
   phone: z.string().max(30).optional(),
 });
 
-const createClientFn = createServerFn({ method: 'POST' })
-  .inputValidator((input: z.infer<typeof createClientSchema>) => createClientSchema.parse(input))
-  .handler(async ({ data }) => {
-    const { createClient } = await import('@supabase/supabase-js');
+async function getErrorMessage(error: unknown) {
+  if (error && typeof error === 'object' && 'context' in error) {
+    const response = (error as { context?: Response }).context;
 
-    const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error('Configuration serveur manquante. Contactez l\'administrateur.');
+    if (response) {
+      try {
+        const payload = await response.clone().json() as { error?: string };
+        if (payload?.error) return payload.error;
+      } catch {
+        try {
+          const text = await response.clone().text();
+          if (text) return text;
+        } catch {
+          // noop
+        }
+      }
     }
+  }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-    // 1. Create auth user
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-    });
-
-    if (authError || !authData.user) {
-      throw new Error(authError?.message || 'Erreur création utilisateur');
-    }
-
-    const userId = authData.user.id;
-
-    // 2. Assign 'pdv' role
-    const { error: roleError } = await supabaseAdmin.from('user_roles').insert({
-      user_id: userId,
-      role: 'pdv',
-    });
-
-    if (roleError) {
-      // Cleanup: delete user if role assignment fails
-      await supabaseAdmin.auth.admin.deleteUser(userId);
-      throw new Error('Erreur assignation rôle: ' + roleError.message);
-    }
-
-    // 3. Create client record
-    const { error: clientError } = await supabaseAdmin.from('clients').insert({
-      user_id: userId,
-      name: data.name,
-      contact: data.contact,
-      address: data.address,
-      email: data.email,
-      phone: data.phone || null,
-      active: true,
-    });
-
-    if (clientError) {
-      await supabaseAdmin.auth.admin.deleteUser(userId);
-      throw new Error('Erreur création client: ' + clientError.message);
-    }
-
-    return { success: true };
-  });
+  if (error instanceof Error && error.message) return error.message;
+  return 'Erreur lors de la création';
+}
 
 interface CreateClientDialogProps {
   open: boolean;
@@ -90,30 +54,45 @@ export function CreateClientDialog({ open, onOpenChange, onCreated }: CreateClie
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const createClient = useServerFn(createClientFn);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !contact || !address || !email || !password) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-    if (password.length < 6) {
-      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+    const parsed = createClientSchema.safeParse({
+      name,
+      contact,
+      address,
+      email,
+      password,
+      phone: phone || undefined,
+    });
+
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message || 'Veuillez vérifier les champs saisis');
       return;
     }
 
     setSaving(true);
     try {
-      await createClient({
-        data: { name, contact, address, email, password, phone: phone || undefined },
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error('Session expirée. Reconnectez-vous.');
+      }
+
+      const { error } = await supabase.functions.invoke('create-client', {
+        body: parsed.data,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
+
+      if (error) throw error;
+
       toast.success('Client créé avec succès !', { description: `${name} — ${email}` });
       onOpenChange(false);
       resetForm();
       onCreated();
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la création');
+    } catch (err) {
+      toast.error(await getErrorMessage(err));
     } finally {
       setSaving(false);
     }
