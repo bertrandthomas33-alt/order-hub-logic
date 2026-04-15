@@ -93,10 +93,8 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
       return;
     }
 
-    const doc = new jsPDF({ orientation: 'landscape' });
-
-    warehouseEntries.forEach(([, wh], idx) => {
-      if (idx > 0) doc.addPage();
+    warehouseEntries.forEach(([, wh]) => {
+      const doc = new jsPDF({ orientation: 'landscape' });
 
       doc.setFontSize(16);
       doc.text(`Fiche de production — ${wh.warehouseName}`, 14, 20);
@@ -129,10 +127,12 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
           [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240] },
         },
       });
+
+      const safeName = wh.warehouseName.replace(/[^a-zA-Z0-9À-ÿ]/g, '-').toLowerCase();
+      doc.save(`fiche-production-${safeName}-${tomorrow}.pdf`);
     });
 
-    doc.save(`fiche-production-${tomorrow}.pdf`);
-    toast.success('PDF téléchargé !');
+    toast.success(`${warehouseEntries.length} PDF téléchargé(s) !`);
   };
 
   const handleConfirmAndGenerate = async () => {
