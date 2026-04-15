@@ -9,8 +9,8 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:shadow-lg hover:shadow-primary/5">
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <div className="flex h-full items-center justify-center text-5xl">
+      <div className="relative aspect-[3/2] overflow-hidden bg-muted">
+        <div className="flex h-full items-center justify-center text-3xl">
           {getCategoryEmoji(product.category)}
         </div>
       </div>
