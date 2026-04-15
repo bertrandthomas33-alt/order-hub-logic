@@ -30,58 +30,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
 
   const fetchRoleAndClient = useCallback(async (userId: string) => {
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .limit(1)
-      .single();
-
-    const r = (roleData?.role as 'admin' | 'pdv') ?? null;
-    setRole(r);
-
-    if (r === 'pdv') {
-      const { data: clientData } = await supabase
-        .from('clients')
-        .select('id')
+    try {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
         .eq('user_id', userId)
         .limit(1)
         .single();
-      setClientId(clientData?.id ?? null);
-    } else {
+
+      const r = (roleData?.role as 'admin' | 'pdv') ?? null;
+      setRole(r);
+
+      if (r === 'pdv') {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', userId)
+          .limit(1)
+          .single();
+        setClientId(clientData?.id ?? null);
+      } else {
+        setClientId(null);
+      }
+    } catch {
+      setRole(null);
       setClientId(null);
     }
   }, []);
 
   useEffect(() => {
     setIsMounted(true);
-    // Only run auth on client side
+
     if (typeof window === 'undefined') {
       setIsLoading(false);
       return;
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, sess) => {
-        setSession(sess);
-        setUser(sess?.user ?? null);
-        if (sess?.user) {
-          await fetchRoleAndClient(sess.user.id);
-        } else {
-          setRole(null);
-          setClientId(null);
-        }
+    const syncAuthState = (sess: Session | null) => {
+      setSession(sess);
+      setUser(sess?.user ?? null);
+
+      if (!sess?.user) {
+        setRole(null);
+        setClientId(null);
         setIsLoading(false);
+        return;
+      }
+
+      void fetchRoleAndClient(sess.user.id).finally(() => {
+        setIsLoading(false);
+      });
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, sess) => {
+        syncAuthState(sess);
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        await fetchRoleAndClient(sess.user.id);
-      }
-      setIsLoading(false);
+    void supabase.auth.getSession().then(({ data: { session: sess } }) => {
+      syncAuthState(sess);
     });
 
     return () => subscription.unsubscribe();
