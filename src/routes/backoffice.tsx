@@ -9,6 +9,7 @@ import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
 import { ProductionSheetDialog } from '@/components/ProductionSheetDialog';
+import { WarehousesManager } from '@/components/WarehousesManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
