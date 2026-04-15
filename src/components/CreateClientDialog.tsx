@@ -20,7 +20,16 @@ const createClientSchema = z.object({
 const createClientFn = createServerFn({ method: 'POST' })
   .inputValidator((input: z.infer<typeof createClientSchema>) => createClientSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { createClient } = await import('@supabase/supabase-js');
+
+    const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Configuration serveur manquante. Contactez l\'administrateur.');
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     // 1. Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
