@@ -22,11 +22,31 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [unit, setUnit] = useState('kg');
+  const [warehouseId, setWarehouseId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [active, setActive] = useState(true);
   const [imageUrl, setImageUrl] = useState('');
   const [stock, setStock] = useState('');
   const [saving, setSaving] = useState(false);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
+
+  // Derive unique warehouses from categories
+  useEffect(() => {
+    const whMap = new Map<string, any>();
+    categories.forEach((cat: any) => {
+      if (cat.warehouses && !whMap.has(cat.warehouses.id)) {
+        whMap.set(cat.warehouses.id, cat.warehouses);
+      }
+      if (cat.warehouse_id && !cat.warehouses && !whMap.has(cat.warehouse_id)) {
+        whMap.set(cat.warehouse_id, { id: cat.warehouse_id, name: cat.warehouse_id });
+      }
+    });
+    setWarehouses(Array.from(whMap.values()));
+  }, [categories]);
+
+  const filteredCategories = warehouseId
+    ? categories.filter((cat: any) => (cat.warehouse_id || cat.warehouses?.id) === warehouseId)
+    : categories;
 
   useEffect(() => {
     if (product) {
@@ -38,8 +58,11 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
       setActive(product.active ?? true);
       setImageUrl(product.image_url || '');
       setStock(String(product.stock ?? '0'));
+      // Set warehouse from the product's category
+      const cat = categories.find((c: any) => c.id === product.category_id);
+      setWarehouseId(cat?.warehouse_id || cat?.warehouses?.id || '');
     }
-  }, [product]);
+  }, [product, categories]);
 
   const handleSave = async () => {
     if (!name.trim() || !categoryId || !price) {
@@ -119,18 +142,34 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Catégorie *</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Label>Entrepôt *</Label>
+              <Select value={warehouseId} onValueChange={(val) => {
+                setWarehouseId(val);
+                // Reset category if it doesn't belong to new warehouse
+                const cat = categories.find((c: any) => c.id === categoryId);
+                if (cat && (cat.warehouse_id || cat.warehouses?.id) !== val) {
+                  setCategoryId('');
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat: any) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name} — {cat.warehouses?.name || ''}
-                    </SelectItem>
+                  {warehouses.map((wh: any) => (
+                    <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label>Catégorie *</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+              <SelectContent>
+                {filteredCategories.map((cat: any) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-3">
             <Switch id="edit-active" checked={active} onCheckedChange={setActive} />
