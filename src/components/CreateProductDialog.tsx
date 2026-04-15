@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ImageUpload } from '@/components/ImageUpload';
 
 interface CreateProductDialogProps {
   categories: any[];
@@ -98,8 +99,8 @@ export function CreateProductDialog({ categories, open, onOpenChange, onCreated 
             <Textarea id="new-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="new-image">URL de l'image</Label>
-            <Input id="new-image" type="url" placeholder="https://..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+            <Label>Image</Label>
+            <ImageUpload value={imageUrl} onChange={setImageUrl} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
