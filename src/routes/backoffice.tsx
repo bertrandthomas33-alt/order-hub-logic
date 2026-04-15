@@ -56,6 +56,7 @@ function BackofficePage() {
   const [clients, setClients] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [showProductionSheet, setShowProductionSheet] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -92,8 +93,6 @@ function BackofficePage() {
     { id: 'produits', label: 'Produits', icon: <Package className="h-4 w-4" />, count: products.length },
     { id: 'clients', label: 'Clients', icon: <Users className="h-4 w-4" />, count: clients.length },
   ];
-
-  const [showProductionSheet, setShowProductionSheet] = useState(false);
 
   const handleRefreshOrders = () => {
     supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
