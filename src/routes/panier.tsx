@@ -25,16 +25,84 @@ export const Route = createFileRoute('/panier')({
 function PanierPage() {
   const { items, updateQuantity, removeItem, clearCart, total, deliveryDate, setDeliveryDate } = useCartStore();
   const tomorrow = addDays(startOfDay(new Date()), 1);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (!deliveryDate) {
       toast.error('Veuillez sélectionner une date de livraison');
       return;
     }
-    toast.success('Commande envoyée avec succès !', {
-      description: `${items.length} produit(s) pour un total de ${total().toFixed(2)} € — Livraison le ${format(deliveryDate, 'dd/MM/yyyy')}`,
-    });
-    clearCart();
+    setSubmitting(true);
+    try {
+      // Get current user & their client
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error('Vous devez être connecté'); return; }
+
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      if (!client) { toast.error('Aucun compte client associé'); return; }
+
+      // Group items by warehouse (via product -> category -> warehouse)
+      const productIds = items.map(i => i.product.id);
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('id, category_id, categories(warehouse_id)')
+        .in('id', productIds);
+
+      const warehouseMap = new Map<string, typeof items>();
+      for (const item of items) {
+        const pData = productsData?.find(p => p.id === item.product.id);
+        const whId = (pData?.categories as any)?.warehouse_id;
+        if (!whId) continue;
+        if (!warehouseMap.has(whId)) warehouseMap.set(whId, []);
+        warehouseMap.get(whId)!.push(item);
+      }
+
+      // Create one order per warehouse
+      for (const [warehouseId, whItems] of warehouseMap) {
+        const orderTotal = whItems.reduce((s, i) => s + i.product.price * i.quantity, 0);
+        const { data: order, error: orderErr } = await supabase
+          .from('orders')
+          .insert({
+            client_id: client.id,
+            warehouse_id: warehouseId,
+            total: orderTotal,
+            delivery_date: format(deliveryDate, 'yyyy-MM-dd'),
+          } as any)
+          .select('id')
+          .single();
+
+        if (orderErr || !order) {
+          toast.error(`Erreur : ${orderErr?.message || 'Impossible de créer la commande'}`);
+          return;
+        }
+
+        // Insert order items
+        const orderItems = whItems.map(i => ({
+          order_id: order.id,
+          product_id: i.product.id,
+          quantity: i.quantity,
+          unit_price: i.product.price,
+        }));
+        const { error: itemsErr } = await supabase.from('order_items').insert(orderItems);
+        if (itemsErr) {
+          toast.error(`Erreur articles : ${itemsErr.message}`);
+          return;
+        }
+      }
+
+      toast.success('Commande envoyée avec succès !', {
+        description: `${items.length} produit(s) pour ${total().toFixed(2)} € — Livraison le ${format(deliveryDate, 'dd/MM/yyyy')}`,
+      });
+      clearCart();
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur inattendue');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (items.length === 0) {
