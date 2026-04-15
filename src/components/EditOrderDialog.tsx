@@ -26,6 +26,7 @@ const statusOptions: { value: OrderStatus; label: string }[] = [
 interface EditableItem {
   id: string;
   product_name: string;
+  category_name: string;
   quantity: number;
   unit_price: number;
   deleted: boolean;
@@ -58,6 +59,7 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
         (order.order_items || []).map((item: any) => ({
           id: item.id,
           product_name: item.products?.name || 'Produit',
+          category_name: item.products?.categories?.name || 'Sans catégorie',
           quantity: Number(item.quantity),
           unit_price: Number(item.unit_price),
           deleted: false,
