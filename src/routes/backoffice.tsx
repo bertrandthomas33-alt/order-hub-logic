@@ -545,6 +545,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
 
 function ClientsTable({ clients, search, onRefresh }: { clients: any[]; search: string; onRefresh: () => void }) {
   const [showCreate, setShowCreate] = useState(false);
+  const [editClient, setEditClient] = useState<any>(null);
   const filtered = clients.filter(
     (c: any) =>
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -571,16 +572,17 @@ function ClientsTable({ clients, search, onRefresh }: { clients: any[]; search: 
               <TableHead>Téléphone</TableHead>
               <TableHead>Adresse</TableHead>
               <TableHead>Actif</TableHead>
+              <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">Aucun client trouvé</TableCell>
+                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucun client trouvé</TableCell>
               </TableRow>
             ) : (
               filtered.map((client: any) => (
-                <TableRow key={client.id}>
+                <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setEditClient(client)}>
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell>{client.contact || '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{client.email || '—'}</TableCell>
@@ -597,6 +599,11 @@ function ClientsTable({ clients, search, onRefresh }: { clients: any[]; search: 
                       </span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setEditClient(client); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -604,6 +611,7 @@ function ClientsTable({ clients, search, onRefresh }: { clients: any[]; search: 
         </Table>
       </div>
       <CreateClientDialog open={showCreate} onOpenChange={setShowCreate} onCreated={onRefresh} />
+      <EditClientDialog open={!!editClient} onOpenChange={(v) => !v && setEditClient(null)} client={editClient} onUpdated={onRefresh} />
     </>
   );
 }
