@@ -29,7 +29,7 @@ export const Route = createFileRoute('/backoffice')({
   component: BackofficePage,
 });
 
-type Tab = 'commandes' | 'produits' | 'clients';
+type Tab = 'commandes' | 'produits' | 'clients' | 'entrepots';
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
