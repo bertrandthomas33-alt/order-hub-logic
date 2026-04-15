@@ -24,6 +24,8 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
   const [unit, setUnit] = useState('kg');
   const [categoryId, setCategoryId] = useState('');
   const [active, setActive] = useState(true);
+  const [imageUrl, setImageUrl] = useState('');
+  const [stock, setStock] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -34,6 +36,8 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
       setUnit(product.unit || 'kg');
       setCategoryId(product.category_id || '');
       setActive(product.active ?? true);
+      setImageUrl(product.image_url || '');
+      setStock(String(product.stock ?? '0'));
     }
   }, [product]);
 
@@ -52,6 +56,8 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
         unit,
         category_id: categoryId,
         active,
+        image_url: imageUrl.trim() || null,
+        stock: Number(stock) || 0,
       })
       .eq('id', product.id);
 
@@ -81,11 +87,24 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
             <Label htmlFor="edit-desc">Description</Label>
             <Textarea id="edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="edit-image">URL de l'image</Label>
+            <Input id="edit-image" type="url" placeholder="https://..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+            {imageUrl && (
+              <img src={imageUrl} alt="Aperçu" className="mt-1 h-20 w-20 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-price">Prix (€) *</Label>
               <Input id="edit-price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-stock">Stock</Label>
+              <Input id="edit-stock" type="number" step="0.1" min="0" value={stock} onChange={(e) => setStock(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-unit">Unité</Label>
               <Select value={unit} onValueChange={setUnit}>
@@ -99,19 +118,19 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>Catégorie *</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger><SelectValue placeholder="Choisir une catégorie" /></SelectTrigger>
-              <SelectContent>
-                {categories.map((cat: any) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name} — {cat.warehouses?.name || ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid gap-2">
+              <Label>Catégorie *</Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name} — {cat.warehouses?.name || ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Switch id="edit-active" checked={active} onCheckedChange={setActive} />

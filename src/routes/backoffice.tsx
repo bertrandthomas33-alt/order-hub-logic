@@ -237,11 +237,13 @@ function ProduitsTable({ products, categories, search, onRefresh }: { products: 
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Nom</TableHead>
               <TableHead>Catégorie</TableHead>
               <TableHead>Entrepôt</TableHead>
               <TableHead className="text-right">Prix</TableHead>
               <TableHead>Unité</TableHead>
+              <TableHead className="text-right">Stock</TableHead>
               <TableHead>Actif</TableHead>
               <TableHead className="w-10"></TableHead>
             </TableRow>
@@ -249,11 +251,20 @@ function ProduitsTable({ products, categories, search, onRefresh }: { products: 
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
+              <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
               </TableRow>
             ) : (
               filtered.map((product: any) => (
                 <TableRow key={product.id}>
+                  <TableCell>
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <Package className="h-4 w-4" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium">{product.name}</p>
@@ -270,6 +281,7 @@ function ProduitsTable({ products, categories, search, onRefresh }: { products: 
                   </TableCell>
                   <TableCell className="text-right font-medium">{Number(product.price).toFixed(2)} €</TableCell>
                   <TableCell className="text-muted-foreground">/ {product.unit}</TableCell>
+                  <TableCell className="text-right">{Number(product.stock ?? 0)}</TableCell>
                   <TableCell>
                     {product.active ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
