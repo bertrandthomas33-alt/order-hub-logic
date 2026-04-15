@@ -181,11 +181,19 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
   const [editOrder, setEditOrder] = useState<any | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
-  const filtered = orders.filter(
-    (o: any) =>
-      o.id?.toLowerCase().includes(search.toLowerCase()) ||
-      o.clients?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const [filterClient, setFilterClient] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterDate, setFilterDate] = useState<string>('');
+
+  const uniqueClients = Array.from(new Map(orders.map((o: any) => [o.client_id, o.clients?.name])).entries()).filter(([, name]) => name);
+
+  const filtered = orders.filter((o: any) => {
+    const matchSearch = !search || o.id?.toLowerCase().includes(search.toLowerCase()) || o.clients?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchClient = filterClient === 'all' || o.client_id === filterClient;
+    const matchStatus = filterStatus === 'all' || o.status === filterStatus;
+    const matchDate = !filterDate || o.delivery_date === filterDate;
+    return matchSearch && matchClient && matchStatus && matchDate;
+  });
 
   const allSelected = filtered.length > 0 && filtered.every((o: any) => selected.has(o.id));
   const toggleAll = () => {
@@ -222,8 +230,51 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
     }
   };
 
+  const hasFilters = filterClient !== 'all' || filterStatus !== 'all' || !!filterDate;
+
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          Filtres
+        </div>
+        <Select value={filterClient} onValueChange={setFilterClient}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Client" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les clients</SelectItem>
+            {uniqueClients.map(([id, name]) => (
+              <SelectItem key={id} value={id}>{name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            {Object.entries(statusLabels).map(([key, label]) => (
+              <SelectItem key={key} value={key}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          type="date"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          className="w-[160px]"
+          placeholder="Date livraison"
+        />
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterClient('all'); setFilterStatus('all'); setFilterDate(''); }}>
+            Réinitialiser
+          </Button>
+        )}
+        <span className="ml-auto text-xs text-muted-foreground">{filtered.length} commande(s)</span>
+      </div>
       {selected.size > 0 && (
         <div className="mb-4 flex items-center gap-3">
           <span className="text-sm text-muted-foreground">{selected.size} sélectionnée(s)</span>
@@ -246,7 +297,7 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
               <TableHead>Articles</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>Statut</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>Livraison</TableHead>
               <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
@@ -277,7 +328,7 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                    {order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('fr-FR') : '—'}
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => setEditOrder(order)}>
