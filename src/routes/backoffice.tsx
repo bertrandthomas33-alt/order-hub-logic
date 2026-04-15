@@ -3,7 +3,8 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus } from 'lucide-react';
+import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
@@ -178,18 +179,67 @@ function BackofficePage() {
 
 function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: string; onRefresh: () => void }) {
   const [editOrder, setEditOrder] = useState<any | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const filtered = orders.filter(
     (o: any) =>
       o.id?.toLowerCase().includes(search.toLowerCase()) ||
       o.clients?.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const allSelected = filtered.length > 0 && filtered.every((o: any) => selected.has(o.id));
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map((o: any) => o.id)));
+    }
+  };
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selected.size === 0) return;
+    setDeleting(true);
+    try {
+      const ids = Array.from(selected);
+      const { error: itemsErr } = await supabase.from('order_items').delete().in('order_id', ids);
+      if (itemsErr) throw itemsErr;
+      const { error } = await supabase.from('orders').delete().in('id', ids);
+      if (error) throw error;
+      toast.success(`${ids.length} commande(s) supprimée(s)`);
+      setSelected(new Set());
+      onRefresh();
+    } catch (err: any) {
+      toast.error('Erreur lors de la suppression', { description: err.message });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <>
+      {selected.size > 0 && (
+        <div className="mb-4 flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{selected.size} sélectionnée(s)</span>
+          <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={deleting}>
+            <Trash2 className="mr-1 h-4 w-4" />
+            Supprimer
+          </Button>
+        </div>
+      )}
       <div className="rounded-2xl border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+              </TableHead>
               <TableHead>N° Commande</TableHead>
               <TableHead>Client</TableHead>
               <TableHead>Entrepôt</TableHead>
@@ -203,11 +253,14 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">Aucune commande trouvée</TableCell>
+                <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">Aucune commande trouvée</TableCell>
               </TableRow>
             ) : (
               filtered.map((order: any) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.id} data-state={selected.has(order.id) ? 'selected' : undefined}>
+                  <TableCell>
+                    <Checkbox checked={selected.has(order.id)} onCheckedChange={() => toggleOne(order.id)} />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
                   <TableCell className="font-medium">{order.clients?.name || '—'}</TableCell>
                   <TableCell>

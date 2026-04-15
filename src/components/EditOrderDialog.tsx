@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2, Warehouse, Trash2 } from 'lucide-react';
+import { CalendarIcon, Loader2, Warehouse, Trash2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,6 +45,9 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
   const [saving, setSaving] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [items, setItems] = useState<EditableItem[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
 
   useEffect(() => {
     if (order) {
@@ -123,7 +126,26 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
     }
   };
 
-  if (!order) return null;
+  const handleDelete = async () => {
+    if (!order) return;
+    setDeleting(true);
+    try {
+      const { error: itemsErr } = await supabase.from('order_items').delete().eq('order_id', order.id);
+      if (itemsErr) throw itemsErr;
+      const { error } = await supabase.from('orders').delete().eq('id', order.id);
+      if (error) throw error;
+      toast.success('Commande supprimée');
+      onSaved();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error('Erreur lors de la suppression', { description: err.message });
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -230,12 +252,34 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Enregistrer
-          </Button>
+        <DialogFooter className="flex-col gap-3 sm:flex-row sm:justify-between">
+          <div>
+            {!confirmDelete ? (
+              <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+                <Trash2 className="mr-1 h-4 w-4" />
+                Supprimer
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  Confirmer ?
+                </span>
+                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
+                  {deleting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                  Oui
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Non</Button>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
