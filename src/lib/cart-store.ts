@@ -15,6 +15,8 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  deliveryDate: undefined,
+  setDeliveryDate: (date) => set({ deliveryDate: date }),
   addItem: (product, quantity = 1) => {
     set((state) => {
       const existing = state.items.find((i) => i.product.id === product.id);
