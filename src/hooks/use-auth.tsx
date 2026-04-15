@@ -15,9 +15,24 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+const defaultAuthState: AuthState = {
+  isAuthenticated: false,
+  isLoading: true,
+  user: null,
+  session: null,
+  role: null,
+  clientId: null,
+  login: async () => {},
+  logout: async () => {},
+};
+
 export function useAuth(): AuthState {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  if (!ctx) {
+    // During SSR, AuthProvider may not be mounted yet — return safe defaults
+    if (typeof window === 'undefined') return defaultAuthState;
+    throw new Error('useAuth must be used inside AuthProvider');
+  }
   return ctx;
 }
 
