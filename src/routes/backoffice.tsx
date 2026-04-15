@@ -75,7 +75,7 @@ function BackofficePage() {
         supabase.from('products').select('*, categories(name, warehouses(name))').order('name'),
         supabase.from('clients').select('*').order('name'),
         supabase.from('warehouses').select('*').order('name'),
-        supabase.from('categories').select('*, warehouses(name)').order('name'),
+        supabase.from('categories').select('*, warehouses(id, name)').order('name'),
       ]);
       setOrders(ordersRes.data ?? []);
       setProducts(productsRes.data ?? []);
