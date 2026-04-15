@@ -87,11 +87,11 @@ export function CreateProductDialog({ categories, open, onOpenChange, onCreated 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Nouveau produit</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
           <div className="grid gap-2">
             <Label htmlFor="new-name">Nom *</Label>
             <Input id="new-name" value={name} onChange={(e) => setName(e.target.value)} />

@@ -101,11 +101,11 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Modifier le produit</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-2">
           <div className="grid gap-2">
             <Label htmlFor="edit-name">Nom *</Label>
             <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} />
