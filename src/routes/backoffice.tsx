@@ -39,7 +39,7 @@ const statusColors: Record<string, string> = {
 };
 
 function BackofficePage() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, isLoading, role } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('commandes');
   const [search, setSearch] = useState('');
@@ -52,14 +52,15 @@ function BackofficePage() {
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated || role !== 'admin') {
       navigate({ to: '/login' });
       return;
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, isLoading, role, navigate]);
 
   useEffect(() => {
-    if (role !== 'admin') return;
+    if (isLoading || role !== 'admin') return;
     
     const fetchData = async () => {
       const [ordersRes, productsRes, clientsRes, warehousesRes, categoriesRes] = await Promise.all([
