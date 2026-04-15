@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
+import { ProductionSheetDialog } from '@/components/ProductionSheetDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -92,30 +93,10 @@ function BackofficePage() {
     { id: 'clients', label: 'Clients', icon: <Users className="h-4 w-4" />, count: clients.length },
   ];
 
-  const handleGenerateFiche = () => {
-    const productionOrders = orders.filter(
-      (o: any) => o.status === 'confirmed' || o.status === 'pending'
-    );
-    
-    // Group by warehouse
-    const byWarehouse: Record<string, Record<string, { name: string; total: number }>> = {};
-    productionOrders.forEach((order: any) => {
-      const whName = order.warehouses?.name || 'Inconnu';
-      if (!byWarehouse[whName]) byWarehouse[whName] = {};
-      order.order_items?.forEach((item: any) => {
-        const pName = item.products?.name || 'Produit';
-        if (byWarehouse[whName][pName]) {
-          byWarehouse[whName][pName].total += Number(item.quantity);
-        } else {
-          byWarehouse[whName][pName] = { name: pName, total: Number(item.quantity) };
-        }
-      });
-    });
+  const [showProductionSheet, setShowProductionSheet] = useState(false);
 
-    const warehouseCount = Object.keys(byWarehouse).length;
-    toast.success('Fiche de production générée !', {
-      description: `${warehouseCount} entrepôt(s) — ${productionOrders.length} commande(s)`,
-    });
+  const handleRefreshOrders = () => {
+    supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
   };
 
   return (
