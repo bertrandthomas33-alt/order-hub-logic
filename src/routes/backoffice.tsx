@@ -9,6 +9,7 @@ import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
 import { ProductionSheetDialog } from '@/components/ProductionSheetDialog';
+import { WarehousesManager } from '@/components/WarehousesManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/backoffice')({
   component: BackofficePage,
 });
 
-type Tab = 'commandes' | 'produits' | 'clients';
+type Tab = 'commandes' | 'produits' | 'clients' | 'entrepots';
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
@@ -92,6 +93,7 @@ function BackofficePage() {
     { id: 'commandes', label: 'Commandes', icon: <ClipboardList className="h-4 w-4" />, count: orders.length },
     { id: 'produits', label: 'Produits', icon: <Package className="h-4 w-4" />, count: products.length },
     { id: 'clients', label: 'Clients', icon: <Users className="h-4 w-4" />, count: clients.length },
+    { id: 'entrepots', label: 'Entrepôts', icon: <Warehouse className="h-4 w-4" />, count: warehouses.length },
   ];
 
   const handleRefreshOrders = () => {
@@ -151,6 +153,12 @@ function BackofficePage() {
         }} />}
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} onRefresh={() => {
           supabase.from('clients').select('*').order('name').then(r => setClients(r.data ?? []));
+        }} />}
+        {activeTab === 'entrepots' && <WarehousesManager warehouses={warehouses} categories={categories} onRefresh={() => {
+          Promise.all([
+            supabase.from('warehouses').select('*').order('name'),
+            supabase.from('categories').select('*, warehouses(id, name)').order('name'),
+          ]).then(([whRes, catRes]) => { setWarehouses(whRes.data ?? []); setCategories(catRes.data ?? []); });
         }} />}
         <ProductionSheetDialog
           open={showProductionSheet}
