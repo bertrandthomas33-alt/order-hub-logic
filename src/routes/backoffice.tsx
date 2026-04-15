@@ -152,6 +152,12 @@ function BackofficePage() {
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} onRefresh={() => {
           supabase.from('clients').select('*').order('name').then(r => setClients(r.data ?? []));
         }} />}
+        <ProductionSheetDialog
+          open={showProductionSheet}
+          onOpenChange={setShowProductionSheet}
+          orders={orders}
+          onRefresh={handleRefreshOrders}
+        />
       </div>
     </div>
   );
