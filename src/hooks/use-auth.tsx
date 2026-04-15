@@ -26,7 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<'admin' | 'pdv' | null>(null);
   const [clientId, setClientId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(typeof window !== 'undefined');
+  const [isMounted, setIsMounted] = useState(false);
 
   const fetchRoleAndClient = useCallback(async (userId: string) => {
     const { data: roleData } = await supabase
