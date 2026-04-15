@@ -145,7 +145,7 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
     }
   };
 
-
+  if (!order) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
