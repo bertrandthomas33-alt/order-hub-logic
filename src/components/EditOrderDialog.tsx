@@ -26,6 +26,7 @@ const statusOptions: { value: OrderStatus; label: string }[] = [
 interface EditableItem {
   id: string;
   product_name: string;
+  category_name: string;
   quantity: number;
   unit_price: number;
   deleted: boolean;
@@ -58,6 +59,7 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
         (order.order_items || []).map((item: any) => ({
           id: item.id,
           product_name: item.products?.name || 'Produit',
+          category_name: item.products?.categories?.name || 'Sans catégorie',
           quantity: Number(item.quantity),
           unit_price: Number(item.unit_price),
           deleted: false,
@@ -170,35 +172,50 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
           {items.length > 0 && (
             <div>
               <Label className="text-xs text-muted-foreground mb-2 block">Articles</Label>
-              <div className="space-y-2">
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${item.deleted ? 'bg-destructive/10 opacity-50 line-through' : 'bg-muted/30'}`}
-                  >
-                    <span className="flex-1 truncate">{item.product_name}</span>
-                    <Input
-                      type="number"
-                      min={0.1}
-                      step={0.1}
-                      value={item.quantity}
-                      onChange={(e) => updateItemQuantity(item.id, parseFloat(e.target.value) || 0.1)}
-                      className="w-20 h-7 text-center"
-                      disabled={item.deleted}
-                    />
-                    <span className="text-muted-foreground w-20 text-right">
-                      {(item.unit_price * item.quantity).toFixed(2)} €
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      onClick={() => toggleDeleteItem(item.id)}
-                    >
-                      <Trash2 className={`h-3.5 w-3.5 ${item.deleted ? 'text-muted-foreground' : 'text-destructive'}`} />
-                    </Button>
-                  </div>
-                ))}
+              <div className="space-y-1">
+                {(() => {
+                  const sorted = [...items].sort((a, b) => {
+                    const catCmp = a.category_name.localeCompare(b.category_name, 'fr');
+                    return catCmp !== 0 ? catCmp : a.product_name.localeCompare(b.product_name, 'fr');
+                  });
+                  let currentCat = '';
+                  return sorted.map((item) => {
+                    const showCatHeader = item.category_name !== currentCat;
+                    if (showCatHeader) currentCat = item.category_name;
+                    return (
+                      <div key={item.id}>
+                        {showCatHeader && (
+                          <div className="text-xs font-bold text-primary mt-2 mb-1 px-1">{item.category_name}</div>
+                        )}
+                        <div
+                          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${item.deleted ? 'bg-destructive/10 opacity-50 line-through' : 'bg-muted/30'}`}
+                        >
+                          <span className="flex-1 truncate">{item.product_name}</span>
+                          <Input
+                            type="number"
+                            min={0.1}
+                            step={0.1}
+                            value={item.quantity}
+                            onChange={(e) => updateItemQuantity(item.id, parseFloat(e.target.value) || 0.1)}
+                            className="w-20 h-7 text-center"
+                            disabled={item.deleted}
+                          />
+                          <span className="text-muted-foreground w-20 text-right">
+                            {(item.unit_price * item.quantity).toFixed(2)} €
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => toggleDeleteItem(item.id)}
+                          >
+                            <Trash2 className={`h-3.5 w-3.5 ${item.deleted ? 'text-muted-foreground' : 'text-destructive'}`} />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}

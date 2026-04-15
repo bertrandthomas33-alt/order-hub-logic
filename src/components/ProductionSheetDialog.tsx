@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Download, Check } from 'lucide-react';
+import { FileText, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -16,32 +16,35 @@ interface ProductionSheetDialogProps {
   onRefresh: () => void;
 }
 
+interface ProductEntry {
+  name: string;
+  category: string;
+}
+
 export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }: ProductionSheetDialogProps) {
   const [confirmOrders, setConfirmOrders] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  // Tomorrow's date
   const tomorrow = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return d.toISOString().split('T')[0];
   }, []);
 
-  // Filter orders: pending + tomorrow's delivery date
   const filteredOrders = useMemo(() => {
     return orders.filter(
       (o: any) => o.status === 'pending' && o.delivery_date === tomorrow
     );
   }, [orders, tomorrow]);
 
-  // Build data grouped by warehouse
+  // Build data grouped by warehouse, products sorted by category
   const warehouseData = useMemo(() => {
     const result: Record<string, {
       warehouseName: string;
       clients: string[];
       clientIds: string[];
-      products: string[];
-      grid: Record<string, Record<string, number>>; // product -> client -> qty
+      products: ProductEntry[];
+      grid: Record<string, Record<string, number>>;
       orderIds: string[];
     }> = {};
 
@@ -64,8 +67,10 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
 
       order.order_items?.forEach((item: any) => {
         const productName = item.products?.name || 'Produit';
-        if (!result[whId].products.includes(productName)) {
-          result[whId].products.push(productName);
+        const categoryName = item.products?.categories?.name || 'Sans catégorie';
+
+        if (!result[whId].products.find((p) => p.name === productName)) {
+          result[whId].products.push({ name: productName, category: categoryName });
         }
         if (!result[whId].grid[productName]) {
           result[whId].grid[productName] = {};
@@ -75,10 +80,13 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
       });
     });
 
-    // Sort products alphabetically
+    // Sort clients alphabetically, products by category then name
     Object.values(result).forEach((wh) => {
-      wh.products.sort();
       wh.clients.sort();
+      wh.products.sort((a, b) => {
+        const catCmp = a.category.localeCompare(b.category, 'fr');
+        return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name, 'fr');
+      });
     });
 
     return result;
@@ -86,6 +94,19 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
 
   const warehouseEntries = Object.entries(warehouseData);
   const totalOrders = filteredOrders.length;
+
+  // Get unique categories in order for a warehouse
+  const getCategories = (products: ProductEntry[]) => {
+    const seen = new Set<string>();
+    const cats: string[] = [];
+    products.forEach((p) => {
+      if (!seen.has(p.category)) {
+        seen.add(p.category);
+        cats.push(p.category);
+      }
+    });
+    return cats;
+  };
 
   const handleGeneratePDF = () => {
     if (warehouseEntries.length === 0) {
@@ -103,16 +124,29 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
       doc.text(`${wh.clients.length} client(s) — ${wh.products.length} produit(s)`, 14, 34);
 
       const headers = ['Produit', ...wh.clients, 'Total'];
-      const body = wh.products.map((product) => {
-        const row = [product];
+
+      // Build body with category separator rows
+      const body: any[][] = [];
+      let currentCategory = '';
+
+      wh.products.forEach((product) => {
+        if (product.category !== currentCategory) {
+          currentCategory = product.category;
+          // Category header row
+          const catRow = new Array(headers.length).fill('');
+          catRow[0] = `▸ ${currentCategory}`;
+          body.push(catRow);
+        }
+
+        const row = [product.name];
         let total = 0;
         wh.clients.forEach((client) => {
-          const qty = wh.grid[product]?.[client] || 0;
+          const qty = wh.grid[product.name]?.[client] || 0;
           total += qty;
           row.push(qty > 0 ? String(qty) : '');
         });
         row.push(String(total));
-        return row;
+        body.push(row);
       });
 
       autoTable(doc, {
@@ -125,6 +159,15 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 40 },
           [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240] },
+        },
+        didParseCell: (data: any) => {
+          // Style category separator rows
+          if (data.section === 'body' && data.row.raw && data.row.raw[0]?.toString().startsWith('▸')) {
+            data.cell.styles.fillColor = [56, 102, 65];
+            data.cell.styles.textColor = 255;
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fontSize = 9;
+          }
         },
       });
 
@@ -179,46 +222,64 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
           </div>
         ) : (
           <div className="space-y-8">
-            {warehouseEntries.map(([whId, wh]) => (
-              <div key={whId}>
-                <h3 className="mb-3 font-heading text-lg font-bold text-foreground">
-                  🏭 {wh.warehouseName}
-                </h3>
-                <div className="overflow-x-auto rounded-xl border border-border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
-                        {wh.clients.map((client) => (
-                          <TableHead key={client} className="text-center whitespace-nowrap">{client}</TableHead>
-                        ))}
-                        <TableHead className="text-center font-bold bg-muted">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {wh.products.map((product) => {
-                        let total = 0;
-                        return (
-                          <TableRow key={product}>
-                            <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap">{product}</TableCell>
-                            {wh.clients.map((client) => {
-                              const qty = wh.grid[product]?.[client] || 0;
-                              total += qty;
-                              return (
-                                <TableCell key={client} className="text-center">
-                                  {qty > 0 ? <span className="font-medium">{qty}</span> : <span className="text-muted-foreground">—</span>}
+            {warehouseEntries.map(([whId, wh]) => {
+              const categories = getCategories(wh.products);
+              return (
+                <div key={whId}>
+                  <h3 className="mb-3 font-heading text-lg font-bold text-foreground">
+                    🏭 {wh.warehouseName}
+                  </h3>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
+                          {wh.clients.map((client) => (
+                            <TableHead key={client} className="text-center whitespace-nowrap">{client}</TableHead>
+                          ))}
+                          <TableHead className="text-center font-bold bg-muted">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories.map((cat) => {
+                          const catProducts = wh.products.filter((p) => p.category === cat);
+                          return (
+                            <>
+                              <TableRow key={`cat-${cat}`}>
+                                <TableCell
+                                  colSpan={wh.clients.length + 2}
+                                  className="bg-primary/10 font-heading font-bold text-primary text-sm py-1.5 sticky left-0"
+                                >
+                                  {cat}
                                 </TableCell>
-                              );
-                            })}
-                            <TableCell className="text-center font-bold bg-muted">{total}</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                              </TableRow>
+                              {catProducts.map((product) => {
+                                let total = 0;
+                                return (
+                                  <TableRow key={product.name}>
+                                    <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap pl-6">{product.name}</TableCell>
+                                    {wh.clients.map((client) => {
+                                      const qty = wh.grid[product.name]?.[client] || 0;
+                                      total += qty;
+                                      return (
+                                        <TableCell key={client} className="text-center">
+                                          {qty > 0 ? <span className="font-medium">{qty}</span> : <span className="text-muted-foreground">—</span>}
+                                        </TableCell>
+                                      );
+                                    })}
+                                    <TableCell className="text-center font-bold bg-muted">{total}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
