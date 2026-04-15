@@ -108,7 +108,7 @@ function BackofficePage() {
             <h1 className="font-heading text-3xl font-extrabold text-foreground">Back-office</h1>
             <p className="mt-1 text-muted-foreground">Gestion centralisée des commandes, produits et clients</p>
           </div>
-          <Button className="gap-2 rounded-xl" onClick={handleGenerateFiche}>
+          <Button className="gap-2 rounded-xl" onClick={() => setShowProductionSheet(true)}>
             <FileText className="h-4 w-4" />
             Fiche de production
           </Button>
