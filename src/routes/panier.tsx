@@ -4,11 +4,13 @@ import { useCartStore } from '@/lib/cart-store';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, CalendarIcon } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, CalendarIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/panier')({
   head: () => ({
