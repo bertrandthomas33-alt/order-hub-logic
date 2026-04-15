@@ -154,6 +154,12 @@ function BackofficePage() {
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} onRefresh={() => {
           supabase.from('clients').select('*').order('name').then(r => setClients(r.data ?? []));
         }} />}
+        {activeTab === 'entrepots' && <WarehousesManager warehouses={warehouses} categories={categories} onRefresh={() => {
+          Promise.all([
+            supabase.from('warehouses').select('*').order('name'),
+            supabase.from('categories').select('*, warehouses(id, name)').order('name'),
+          ]).then(([whRes, catRes]) => { setWarehouses(whRes.data ?? []); setCategories(catRes.data ?? []); });
+        }} />}
         <ProductionSheetDialog
           open={showProductionSheet}
           onOpenChange={setShowProductionSheet}
