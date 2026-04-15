@@ -252,12 +252,34 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Enregistrer
-          </Button>
+        <DialogFooter className="flex-col gap-3 sm:flex-row sm:justify-between">
+          <div>
+            {!confirmDelete ? (
+              <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+                <Trash2 className="mr-1 h-4 w-4" />
+                Supprimer
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  Confirmer ?
+                </span>
+                <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
+                  {deleting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                  Oui
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>Non</Button>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
