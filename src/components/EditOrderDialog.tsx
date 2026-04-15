@@ -48,13 +48,6 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrderDialogProps) {
-  const [status, setStatus] = useState<OrderStatus>('pending');
-  const [notes, setNotes] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>();
-  const [saving, setSaving] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [items, setItems] = useState<EditableItem[]>([]);
 
   useEffect(() => {
     if (order) {
