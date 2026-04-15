@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus } from 'lucide-react';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
+import { EditOrderDialog } from '@/components/EditOrderDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -161,7 +162,9 @@ function BackofficePage() {
           <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
 
-        {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} />}
+        {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} onRefresh={() => {
+          supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
+        }} />}
         {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} warehouses={warehouses} search={search} onRefresh={() => {
           supabase.from('products').select('*, categories(name, warehouses(name))').order('name').then(r => setProducts(r.data ?? []));
         }} />}
@@ -173,7 +176,8 @@ function BackofficePage() {
   );
 }
 
-function CommandesTable({ orders, search }: { orders: any[]; search: string }) {
+function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: string; onRefresh: () => void }) {
+  const [editOrder, setEditOrder] = useState<any | null>(null);
   const filtered = orders.filter(
     (o: any) =>
       o.id?.toLowerCase().includes(search.toLowerCase()) ||
@@ -181,51 +185,65 @@ function CommandesTable({ orders, search }: { orders: any[]; search: string }) {
   );
 
   return (
-    <div className="rounded-2xl border border-border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>N° Commande</TableHead>
-            <TableHead>Client</TableHead>
-            <TableHead>Entrepôt</TableHead>
-            <TableHead>Articles</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead>Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filtered.length === 0 ? (
+    <>
+      <div className="rounded-2xl border border-border bg-card">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={7} className="py-12 text-center text-muted-foreground">Aucune commande trouvée</TableCell>
+              <TableHead>N° Commande</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Entrepôt</TableHead>
+              <TableHead>Articles</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="w-10"></TableHead>
             </TableRow>
-          ) : (
-            filtered.map((order: any) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
-                <TableCell className="font-medium">{order.clients?.name || '—'}</TableCell>
-                <TableCell>
-                  <span className="inline-flex items-center gap-1 text-xs">
-                    <Warehouse className="h-3 w-3" />
-                    {order.warehouses?.name || '—'}
-                  </span>
-                </TableCell>
-                <TableCell>{order.order_items?.length || 0} produit(s)</TableCell>
-                <TableCell className="text-right font-medium">{Number(order.total).toFixed(2)} €</TableCell>
-                <TableCell>
-                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[order.status] || ''}`}>
-                    {statusLabels[order.status] || order.status}
-                  </span>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                </TableCell>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">Aucune commande trouvée</TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ) : (
+              filtered.map((order: any) => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-mono text-xs">{order.id.slice(0, 8)}</TableCell>
+                  <TableCell className="font-medium">{order.clients?.name || '—'}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-1 text-xs">
+                      <Warehouse className="h-3 w-3" />
+                      {order.warehouses?.name || '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell>{order.order_items?.length || 0} produit(s)</TableCell>
+                  <TableCell className="text-right font-medium">{Number(order.total).toFixed(2)} €</TableCell>
+                  <TableCell>
+                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColors[order.status] || ''}`}>
+                      {statusLabels[order.status] || order.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(order.created_at).toLocaleDateString('fr-FR')}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon" onClick={() => setEditOrder(order)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <EditOrderDialog
+        order={editOrder}
+        open={!!editOrder}
+        onOpenChange={(open) => { if (!open) setEditOrder(null); }}
+        onSaved={onRefresh}
+      />
+    </>
   );
 }
 
