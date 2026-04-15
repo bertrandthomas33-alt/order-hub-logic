@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    setIsMounted(true);
     // Only run auth on client side
     if (typeof window === 'undefined') {
       setIsLoading(false);
