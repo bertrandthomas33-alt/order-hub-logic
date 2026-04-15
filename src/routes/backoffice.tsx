@@ -347,9 +347,32 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
 
 function ProduitsTable({ products, categories, warehouses, search, onRefresh }: { products: any[]; categories: any[]; warehouses: any[]; search: string; onRefresh: () => void }) {
   const [editProduct, setEditProduct] = useState<any | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterWarehouse, setFilterWarehouse] = useState<string>('all');
   const [filterActive, setFilterActive] = useState<string>('all');
+
+  const toggleActive = async (productId: string, active: boolean) => {
+    const { error } = await supabase.from('products').update({ active }).eq('id', productId);
+    if (error) { toast.error('Erreur'); console.error(error); }
+    else { toast.success(active ? 'Produit activé' : 'Produit désactivé'); onRefresh(); }
+  };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!selectedProductId) return;
+      if (e.ctrlKey && e.key === 'i') {
+        e.preventDefault();
+        toggleActive(selectedProductId, false);
+      }
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        toggleActive(selectedProductId, true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedProductId]);
 
   const filtered = products.filter((p: any) => {
     const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.categories?.name?.toLowerCase().includes(search.toLowerCase());
@@ -438,7 +461,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
               </TableRow>
             ) : (
               filtered.map((product: any) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.id} className={`cursor-pointer ${selectedProductId === product.id ? 'bg-muted/50' : ''}`} onClick={() => setSelectedProductId(product.id === selectedProductId ? null : product.id)}>
                   <TableCell>
                     {product.image_url ? (
                       <img src={product.image_url} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
