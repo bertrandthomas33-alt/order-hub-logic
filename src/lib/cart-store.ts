@@ -3,6 +3,8 @@ import type { Product, CartItem } from './mock-data';
 
 interface CartStore {
   items: CartItem[];
+  deliveryDate: Date | undefined;
+  setDeliveryDate: (date: Date | undefined) => void;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -13,6 +15,8 @@ interface CartStore {
 
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
+  deliveryDate: undefined,
+  setDeliveryDate: (date) => set({ deliveryDate: date }),
   addItem: (product, quantity = 1) => {
     set((state) => {
       const existing = state.items.find((i) => i.product.id === product.id);
@@ -44,7 +48,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
       ),
     }));
   },
-  clearCart: () => set({ items: [] }),
+  clearCart: () => set({ items: [], deliveryDate: undefined }),
   total: () =>
     get().items.reduce((sum, i) => sum + i.product.price * i.quantity, 0),
   itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),

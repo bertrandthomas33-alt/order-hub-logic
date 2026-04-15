@@ -2,8 +2,13 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { Header } from '@/components/Header';
 import { useCartStore } from '@/lib/cart-store';
 import { Button } from '@/components/ui/button';
-import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Minus, Plus, Trash2, ArrowLeft, ShoppingBag, CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { format, addDays, isBefore, startOfDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/panier')({
   head: () => ({
@@ -16,11 +21,16 @@ export const Route = createFileRoute('/panier')({
 });
 
 function PanierPage() {
-  const { items, updateQuantity, removeItem, clearCart, total } = useCartStore();
+  const { items, updateQuantity, removeItem, clearCart, total, deliveryDate, setDeliveryDate } = useCartStore();
+  const tomorrow = addDays(startOfDay(new Date()), 1);
 
   const handleOrder = () => {
+    if (!deliveryDate) {
+      toast.error('Veuillez sélectionner une date de livraison');
+      return;
+    }
     toast.success('Commande envoyée avec succès !', {
-      description: `${items.length} produit(s) pour un total de ${total().toFixed(2)} €`,
+      description: `${items.length} produit(s) pour un total de ${total().toFixed(2)} € — Livraison le ${format(deliveryDate, 'dd/MM/yyyy')}`,
     });
     clearCart();
   };
@@ -113,12 +123,41 @@ function PanierPage() {
         </div>
 
         {/* Total & Order */}
-        <div className="mt-8 rounded-2xl border border-border bg-card p-6">
+        <div className="mt-8 rounded-2xl border border-border bg-card p-6 space-y-6">
+          {/* Date de livraison */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-foreground">Date de livraison souhaitée</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal rounded-xl",
+                    !deliveryDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {deliveryDate ? format(deliveryDate, "EEEE d MMMM yyyy", { locale: fr }) : "Choisir une date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={deliveryDate}
+                  onSelect={setDeliveryDate}
+                  disabled={(date) => isBefore(date, tomorrow)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <div className="flex items-center justify-between">
             <span className="text-lg font-medium text-muted-foreground">Total</span>
             <span className="font-heading text-2xl font-extrabold text-foreground">{total().toFixed(2)} €</span>
           </div>
-          <Button className="mt-6 w-full gap-2 rounded-xl py-6 text-base" onClick={handleOrder}>
+          <Button className="w-full gap-2 rounded-xl py-6 text-base" onClick={handleOrder}>
             <ShoppingBag className="h-5 w-5" />
             Valider la commande
           </Button>
