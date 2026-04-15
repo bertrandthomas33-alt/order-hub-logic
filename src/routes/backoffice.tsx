@@ -461,7 +461,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
               </TableRow>
             ) : (
               filtered.map((product: any) => (
-                <TableRow key={product.id}>
+                <TableRow key={product.id} className={`cursor-pointer ${selectedProductId === product.id ? 'bg-muted/50' : ''}`} onClick={() => setSelectedProductId(product.id === selectedProductId ? null : product.id)}>
                   <TableCell>
                     {product.image_url ? (
                       <img src={product.image_url} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
