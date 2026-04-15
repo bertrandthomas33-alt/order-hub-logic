@@ -7,6 +7,7 @@ import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, P
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
+import { CreateProductDialog } from '@/components/CreateProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
 import { ProductionSheetDialog } from '@/components/ProductionSheetDialog';
 import { WarehousesManager } from '@/components/WarehousesManager';
@@ -347,6 +348,7 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
 
 function ProduitsTable({ products, categories, warehouses, search, onRefresh }: { products: any[]; categories: any[]; warehouses: any[]; search: string; onRefresh: () => void }) {
   const [editProduct, setEditProduct] = useState<any | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterWarehouse, setFilterWarehouse] = useState<string>('all');
@@ -438,6 +440,10 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
           </Button>
         )}
         <span className="ml-auto text-xs text-muted-foreground">{filtered.length} produit(s)</span>
+        <Button className="gap-2" onClick={() => setShowCreate(true)}>
+          <Plus className="h-4 w-4" />
+          Nouveau produit
+        </Button>
       </div>
       <div className="rounded-2xl border border-border bg-card">
         <Table>
@@ -526,6 +532,12 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
         open={!!editProduct}
         onOpenChange={(open) => { if (!open) setEditProduct(null); }}
         onSaved={onRefresh}
+      />
+      <CreateProductDialog
+        categories={categories}
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        onCreated={onRefresh}
       />
     </>
   );
