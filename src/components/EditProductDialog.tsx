@@ -142,18 +142,34 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Catégorie *</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Label>Entrepôt *</Label>
+              <Select value={warehouseId} onValueChange={(val) => {
+                setWarehouseId(val);
+                // Reset category if it doesn't belong to new warehouse
+                const cat = categories.find((c: any) => c.id === categoryId);
+                if (cat && (cat.warehouse_id || cat.warehouses?.id) !== val) {
+                  setCategoryId('');
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat: any) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name} — {cat.warehouses?.name || ''}
-                    </SelectItem>
+                  {warehouses.map((wh: any) => (
+                    <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label>Catégorie *</Label>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+              <SelectContent>
+                {filteredCategories.map((cat: any) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-3">
             <Switch id="edit-active" checked={active} onCheckedChange={setActive} />
