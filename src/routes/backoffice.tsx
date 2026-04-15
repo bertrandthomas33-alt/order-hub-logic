@@ -359,6 +359,10 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
     return matchSearch && matchCategory && matchWarehouse && matchActive;
   });
 
+  const filteredCategories = filterWarehouse === 'all'
+    ? categories
+    : categories.filter((cat: any) => cat.warehouse_id === filterWarehouse);
+
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -366,18 +370,14 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
           <Filter className="h-4 w-4" />
           Filtres
         </div>
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Catégorie" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes catégories</SelectItem>
-            {categories.map((cat: any) => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterWarehouse} onValueChange={setFilterWarehouse}>
+        <Select value={filterWarehouse} onValueChange={(val) => {
+          setFilterWarehouse(val);
+          // Reset category if it doesn't belong to new warehouse
+          if (val !== 'all' && filterCategory !== 'all') {
+            const cat = categories.find((c: any) => c.id === filterCategory);
+            if (cat && cat.warehouse_id !== val) setFilterCategory('all');
+          }
+        }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Entrepôt" />
           </SelectTrigger>
@@ -385,6 +385,17 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
             <SelectItem value="all">Tous entrepôts</SelectItem>
             {warehouses.map((wh: any) => (
               <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Catégorie" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes catégories</SelectItem>
+            {filteredCategories.map((cat: any) => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
