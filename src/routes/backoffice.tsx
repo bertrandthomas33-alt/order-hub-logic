@@ -77,9 +77,9 @@ function BackofficePage() {
       setCategories(categoriesRes.data ?? []);
     };
     fetchData();
-  }, [role]);
+  }, [isLoading, role]);
 
-  if (role !== 'admin') return null;
+  if (isLoading || role !== 'admin') return null;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { id: 'commandes', label: 'Commandes', icon: <ClipboardList className="h-4 w-4" />, count: orders.length },
