@@ -227,9 +227,9 @@ function PanierPage() {
             <span className="text-lg font-medium text-muted-foreground">Total</span>
             <span className="font-heading text-2xl font-extrabold text-foreground">{total().toFixed(2)} €</span>
           </div>
-          <Button className="w-full gap-2 rounded-xl py-6 text-base" onClick={handleOrder}>
-            <ShoppingBag className="h-5 w-5" />
-            Valider la commande
+          <Button className="w-full gap-2 rounded-xl py-6 text-base" onClick={handleOrder} disabled={submitting}>
+            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShoppingBag className="h-5 w-5" />}
+            {submitting ? 'Envoi en cours...' : 'Valider la commande'}
           </Button>
         </div>
       </div>
