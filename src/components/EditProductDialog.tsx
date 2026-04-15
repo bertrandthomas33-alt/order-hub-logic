@@ -21,6 +21,7 @@ interface EditProductDialogProps {
 export function EditProductDialog({ product, categories, open, onOpenChange, onSaved }: EditProductDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [price, setPrice] = useState('');
   const [unit, setUnit] = useState('kg');
   const [warehouseId, setWarehouseId] = useState('');
@@ -53,6 +54,7 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
     if (product) {
       setName(product.name || '');
       setDescription(product.description || '');
+      setCostPrice(String(product.cost_price ?? '0'));
       setPrice(String(product.price ?? ''));
       setUnit(product.unit || 'kg');
       setCategoryId(product.category_id || '');
@@ -76,6 +78,7 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
       .update({
         name: name.trim(),
         description: description.trim() || null,
+        cost_price: Number(costPrice) || 0,
         price: Number(price),
         unit,
         category_id: categoryId,
@@ -117,9 +120,15 @@ export function EditProductDialog({ product, categories, open, onOpenChange, onS
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-price">Prix (€) *</Label>
+              <Label htmlFor="edit-cost-price">Prix de revient (€)</Label>
+              <Input id="edit-cost-price" type="number" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-price">Prix de vente (€) *</Label>
               <Input id="edit-price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="edit-stock">Stock</Label>
               <Input id="edit-stock" type="number" step="0.1" min="0" value={stock} onChange={(e) => setStock(e.target.value)} />
