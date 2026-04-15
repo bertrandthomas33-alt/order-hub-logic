@@ -39,7 +39,7 @@ const statusColors: Record<string, string> = {
 };
 
 function BackofficePage() {
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, isLoading, role } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('commandes');
   const [search, setSearch] = useState('');
@@ -52,14 +52,15 @@ function BackofficePage() {
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
+    if (isLoading) return;
     if (!isAuthenticated || role !== 'admin') {
       navigate({ to: '/login' });
       return;
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, isLoading, role, navigate]);
 
   useEffect(() => {
-    if (role !== 'admin') return;
+    if (isLoading || role !== 'admin') return;
     
     const fetchData = async () => {
       const [ordersRes, productsRes, clientsRes, warehousesRes, categoriesRes] = await Promise.all([
@@ -76,9 +77,9 @@ function BackofficePage() {
       setCategories(categoriesRes.data ?? []);
     };
     fetchData();
-  }, [role]);
+  }, [isLoading, role]);
 
-  if (role !== 'admin') return null;
+  if (isLoading || role !== 'admin') return null;
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { id: 'commandes', label: 'Commandes', icon: <ClipboardList className="h-4 w-4" />, count: orders.length },
