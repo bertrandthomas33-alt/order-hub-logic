@@ -126,7 +126,26 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
     }
   };
 
-  if (!order) return null;
+  const handleDelete = async () => {
+    if (!order) return;
+    setDeleting(true);
+    try {
+      const { error: itemsErr } = await supabase.from('order_items').delete().eq('order_id', order.id);
+      if (itemsErr) throw itemsErr;
+      const { error } = await supabase.from('orders').delete().eq('id', order.id);
+      if (error) throw error;
+      toast.success('Commande supprimée');
+      onSaved();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error('Erreur lors de la suppression', { description: err.message });
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
