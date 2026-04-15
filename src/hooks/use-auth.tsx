@@ -53,6 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Only run auth on client side
+    if (typeof window === 'undefined') {
+      setIsLoading(false);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, sess) => {
         setSession(sess);
