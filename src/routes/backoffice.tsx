@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
+import { EditClientDialog } from '@/components/EditClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { CreateProductDialog } from '@/components/CreateProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
