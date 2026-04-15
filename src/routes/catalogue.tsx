@@ -4,7 +4,8 @@ import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Warehouse } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const Route = createFileRoute('/catalogue')({
   head: () => ({
@@ -34,13 +35,20 @@ interface DbCategory {
   warehouse_id: string;
 }
 
+interface DbWarehouse {
+  id: string;
+  name: string;
+}
+
 function CataloguePage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeWarehouse, setActiveWarehouse] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [categories, setCategories] = useState<DbCategory[]>([]);
+  const [warehouses, setWarehouses] = useState<DbWarehouse[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -52,31 +60,54 @@ function CataloguePage() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const fetchData = async () => {
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, whRes] = await Promise.all([
         supabase.from('products').select('*, categories(id, name, icon, warehouse_id)').eq('active', true).order('name'),
         supabase.from('categories').select('*').order('name'),
+        supabase.from('warehouses').select('id, name').eq('active', true).order('name'),
       ]);
       setProducts((prodRes.data as any) ?? []);
       setCategories((catRes.data as any) ?? []);
+      setWarehouses((whRes.data as any) ?? []);
     };
     fetchData();
   }, [isAuthenticated]);
 
   if (!isAuthenticated) return null;
 
+  const filteredCategories = activeWarehouse === 'all'
+    ? categories
+    : categories.filter((c) => c.warehouse_id === activeWarehouse);
+
   const filteredProducts = products.filter((p) => {
     const matchCategory = !activeCategory || p.category_id === activeCategory;
+    const matchWarehouse = activeWarehouse === 'all' || p.categories?.warehouse_id === activeWarehouse;
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase());
-    return matchCategory && matchSearch;
+    return matchCategory && matchWarehouse && matchSearch;
   });
 
   return (
     <div className="min-h-screen">
       <Header />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="mb-8">
-          <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
-          <p className="mt-2 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
+        <div className="mb-8 flex flex-wrap items-center gap-4">
+          <div>
+            <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
+            <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
+          </div>
+          <div className="ml-auto">
+            <Select value={activeWarehouse} onValueChange={(v) => { setActiveWarehouse(v); setActiveCategory(null); }}>
+              <SelectTrigger className="w-[200px]">
+                <Warehouse className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Entrepôt" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les entrepôts</SelectItem>
+                {warehouses.map((wh) => (
+                  <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="relative mb-6">
@@ -99,7 +130,7 @@ function CataloguePage() {
           >
             Tout
           </button>
-          {categories.map((cat) => (
+          {filteredCategories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
