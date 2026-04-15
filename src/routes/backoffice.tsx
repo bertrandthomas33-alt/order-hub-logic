@@ -464,7 +464,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-              <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
+              <TableCell colSpan={10} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
               </TableRow>
             ) : (
               filtered.map((product: any) => (
