@@ -93,6 +93,7 @@ function BackofficePage() {
     { id: 'commandes', label: 'Commandes', icon: <ClipboardList className="h-4 w-4" />, count: orders.length },
     { id: 'produits', label: 'Produits', icon: <Package className="h-4 w-4" />, count: products.length },
     { id: 'clients', label: 'Clients', icon: <Users className="h-4 w-4" />, count: clients.length },
+    { id: 'entrepots', label: 'Entrepôts', icon: <Warehouse className="h-4 w-4" />, count: warehouses.length },
   ];
 
   const handleRefreshOrders = () => {
