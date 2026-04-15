@@ -21,11 +21,16 @@ export const Route = createFileRoute('/panier')({
 });
 
 function PanierPage() {
-  const { items, updateQuantity, removeItem, clearCart, total } = useCartStore();
+  const { items, updateQuantity, removeItem, clearCart, total, deliveryDate, setDeliveryDate } = useCartStore();
+  const tomorrow = addDays(startOfDay(new Date()), 1);
 
   const handleOrder = () => {
+    if (!deliveryDate) {
+      toast.error('Veuillez sélectionner une date de livraison');
+      return;
+    }
     toast.success('Commande envoyée avec succès !', {
-      description: `${items.length} produit(s) pour un total de ${total().toFixed(2)} €`,
+      description: `${items.length} produit(s) pour un total de ${total().toFixed(2)} € — Livraison le ${format(deliveryDate, 'dd/MM/yyyy')}`,
     });
     clearCart();
   };
