@@ -7,6 +7,8 @@ import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, P
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -159,7 +161,7 @@ function BackofficePage() {
         </div>
 
         {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} />}
-        {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} search={search} onRefresh={() => {
+        {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} warehouses={warehouses} search={search} onRefresh={() => {
           supabase.from('products').select('*, categories(name, warehouses(name))').order('name').then(r => setProducts(r.data ?? []));
         }} />}
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} />}
@@ -224,16 +226,66 @@ function CommandesTable({ orders, search }: { orders: any[]; search: string }) {
   );
 }
 
-function ProduitsTable({ products, categories, search, onRefresh }: { products: any[]; categories: any[]; search: string; onRefresh: () => void }) {
+function ProduitsTable({ products, categories, warehouses, search, onRefresh }: { products: any[]; categories: any[]; warehouses: any[]; search: string; onRefresh: () => void }) {
   const [editProduct, setEditProduct] = useState<any | null>(null);
-  const filtered = products.filter(
-    (p: any) =>
-      p.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.categories?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterWarehouse, setFilterWarehouse] = useState<string>('all');
+  const [filterActive, setFilterActive] = useState<string>('all');
+
+  const filtered = products.filter((p: any) => {
+    const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.categories?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchCategory = filterCategory === 'all' || p.category_id === filterCategory;
+    const matchWarehouse = filterWarehouse === 'all' || p.categories?.warehouses?.name === warehouses.find((w: any) => w.id === filterWarehouse)?.name;
+    const matchActive = filterActive === 'all' || (filterActive === 'true' ? p.active : !p.active);
+    return matchSearch && matchCategory && matchWarehouse && matchActive;
+  });
 
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          Filtres
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Catégorie" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes catégories</SelectItem>
+            {categories.map((cat: any) => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterWarehouse} onValueChange={setFilterWarehouse}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Entrepôt" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous entrepôts</SelectItem>
+            {warehouses.map((wh: any) => (
+              <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterActive} onValueChange={setFilterActive}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="true">Actifs</SelectItem>
+            <SelectItem value="false">Inactifs</SelectItem>
+          </SelectContent>
+        </Select>
+        {(filterCategory !== 'all' || filterWarehouse !== 'all' || filterActive !== 'all') && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterCategory('all'); setFilterWarehouse('all'); setFilterActive('all'); }}>
+            Réinitialiser
+          </Button>
+        )}
+        <span className="ml-auto text-xs text-muted-foreground">{filtered.length} produit(s)</span>
+      </div>
       <div className="rounded-2xl border border-border bg-card">
         <Table>
           <TableHeader>
