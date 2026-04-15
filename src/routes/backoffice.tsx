@@ -371,7 +371,8 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
   );
 }
 
-function ClientsTable({ clients, search }: { clients: any[]; search: string }) {
+function ClientsTable({ clients, search, onRefresh }: { clients: any[]; search: string; onRefresh: () => void }) {
+  const [showCreate, setShowCreate] = useState(false);
   const filtered = clients.filter(
     (c: any) =>
       c.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -380,51 +381,60 @@ function ClientsTable({ clients, search }: { clients: any[]; search: string }) {
   );
 
   return (
-    <div className="rounded-2xl border border-border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Point de vente</TableHead>
-            <TableHead>Contact</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Téléphone</TableHead>
-            <TableHead>Adresse</TableHead>
-            <TableHead>Actif</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filtered.length === 0 ? (
+    <>
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{filtered.length} client(s)</span>
+        <Button className="gap-2" onClick={() => setShowCreate(true)}>
+          <Plus className="h-4 w-4" />
+          Nouveau client
+        </Button>
+      </div>
+      <div className="rounded-2xl border border-border bg-card">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">Aucun client trouvé</TableCell>
+              <TableHead>Point de vente</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Adresse</TableHead>
+              <TableHead>Actif</TableHead>
             </TableRow>
-          ) : (
-            filtered.map((client: any) => (
-              <TableRow key={client.id}>
-                <TableCell className="font-medium">{client.name}</TableCell>
-                <TableCell>{client.contact || '—'}</TableCell>
-                <TableCell className="text-muted-foreground">{client.email || '—'}</TableCell>
-                <TableCell className="text-muted-foreground">{client.phone || '—'}</TableCell>
-                <TableCell>{client.address || '—'}</TableCell>
-                <TableCell>
-                  {client.active ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                      <Check className="h-3 w-3" /> Oui
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                      <X className="h-3 w-3" /> Non
-                    </span>
-                  )}
-                </TableCell>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">Aucun client trouvé</TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ) : (
+              filtered.map((client: any) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell>{client.contact || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.email || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground">{client.phone || '—'}</TableCell>
+                  <TableCell>{client.address || '—'}</TableCell>
+                  <TableCell>
+                    {client.active ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                        <Check className="h-3 w-3" /> Oui
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                        <X className="h-3 w-3" /> Non
+                      </span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <CreateClientDialog open={showCreate} onOpenChange={setShowCreate} onCreated={onRefresh} />
+    </>
   );
 }
-
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
