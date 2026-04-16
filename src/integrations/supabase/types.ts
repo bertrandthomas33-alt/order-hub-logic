@@ -436,6 +436,54 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          active: boolean
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          mobile: string | null
+          name: string | null
+          phone: string | null
+          title: string
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          phone?: string | null
+          title: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          phone?: string | null
+          title?: string
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
