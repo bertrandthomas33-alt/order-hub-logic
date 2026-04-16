@@ -4,8 +4,10 @@ import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Zap } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { QuickOrderDialog } from '@/components/QuickOrderDialog';
 
 export const Route = createFileRoute('/catalogue')({
   head: () => ({
