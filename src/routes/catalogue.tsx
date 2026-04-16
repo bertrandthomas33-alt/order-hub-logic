@@ -52,7 +52,9 @@ function CataloguePage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeWarehouse, setActiveWarehouse] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [quickOrderOpen, setQuickOrderOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const { addItem, items } = useCartStore();
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [warehouses, setWarehouses] = useState<DbWarehouse[]>([]);
