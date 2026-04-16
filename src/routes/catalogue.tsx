@@ -3,11 +3,14 @@ import { Header } from '@/components/Header';
 import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
-import { Search, Zap } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Zap, LayoutGrid } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { QuickOrderDialog } from '@/components/QuickOrderDialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { useCartStore } from '@/lib/cart-store';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/catalogue')({
   head: () => ({
@@ -49,7 +52,9 @@ function CataloguePage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeWarehouse, setActiveWarehouse] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [quickOrderOpen, setQuickOrderOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const { addItem, items } = useCartStore();
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [warehouses, setWarehouses] = useState<DbWarehouse[]>([]);
@@ -100,9 +105,16 @@ function CataloguePage() {
             <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Button onClick={() => setQuickOrderOpen(true)} variant="outline" className="gap-2">
-              <Zap className="h-4 w-4" />
-              Commande rapide
+            <Button
+              onClick={() => {
+                setViewMode(viewMode === 'grid' ? 'table' : 'grid');
+                if (viewMode === 'table') setQuantities({});
+              }}
+              variant={viewMode === 'table' ? 'default' : 'outline'}
+              className="gap-2"
+            >
+              {viewMode === 'grid' ? <Zap className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              {viewMode === 'grid' ? 'Commande rapide' : 'Vue catalogue'}
             </Button>
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -190,39 +202,191 @@ function CataloguePage() {
             ))}
           </div>
 
-          {/* Products grid */}
+          {/* Products content */}
           <div className="flex-1">
-            {filteredProducts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <p className="text-lg font-medium text-muted-foreground">Aucun produit trouvé</p>
-              </div>
+            {viewMode === 'grid' ? (
+              filteredProducts.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <p className="text-lg font-medium text-muted-foreground">Aucun produit trouvé</p>
+                </div>
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={{
+                        id: product.id,
+                        name: product.name,
+                        description: product.description || '',
+                        price: Number(product.price),
+                        unit: product.unit,
+                        category: product.categories?.name || '',
+                        image: product.image_url || undefined,
+                      }}
+                    />
+                  ))}
+                </div>
+              )
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={{
-                      id: product.id,
-                      name: product.name,
-                      description: product.description || '',
-                      price: Number(product.price),
-                      unit: product.unit,
-                      category: product.categories?.name || '',
-                      image: product.image_url || undefined,
-                    }}
-                  />
-                ))}
-              </div>
+              <QuickOrderTableView
+                products={filteredProducts}
+                allProducts={products}
+                quantities={quantities}
+                setQuantities={setQuantities}
+                cartItems={items}
+                addItem={addItem}
+              />
             )}
           </div>
         </div>
       </div>
-      <QuickOrderDialog
-        open={quickOrderOpen}
-        onOpenChange={setQuickOrderOpen}
-        products={products}
-        warehouses={warehouses}
-      />
+    </div>
+  );
+}
+
+function QuickOrderTableView({
+  products,
+  allProducts,
+  quantities,
+  setQuantities,
+  cartItems,
+  addItem,
+}: {
+  products: DbProduct[];
+  allProducts: DbProduct[];
+  quantities: Record<string, number>;
+  setQuantities: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  cartItems: { product: { id: string }; quantity: number }[];
+  addItem: (product: any, qty: number) => void;
+}) {
+  const grouped = useMemo(() => {
+    const sorted = [...products].sort((a, b) => {
+      const catA = a.categories?.name || '';
+      const catB = b.categories?.name || '';
+      const catCmp = catA.localeCompare(catB, 'fr');
+      return catCmp !== 0 ? catCmp : a.name.localeCompare(b.name, 'fr');
+    });
+    const result: { catName: string; catIcon: string | null; items: DbProduct[] }[] = [];
+    let currentCat = '';
+    sorted.forEach((p) => {
+      const cat = p.categories?.name || 'Sans catégorie';
+      if (cat !== currentCat) {
+        currentCat = cat;
+        result.push({ catName: cat, catIcon: p.categories?.icon || null, items: [] });
+      }
+      result[result.length - 1].items.push(p);
+    });
+    return result;
+  }, [products]);
+
+  const totalItems = Object.values(quantities).filter((q) => q > 0).length;
+
+  const setQty = (id: string, value: string) => {
+    const num = value === '' ? 0 : parseFloat(value);
+    if (isNaN(num) || num < 0) return;
+    setQuantities((prev) => ({ ...prev, [id]: num }));
+  };
+
+  const handleAddToCart = () => {
+    let added = 0;
+    Object.entries(quantities).forEach(([productId, qty]) => {
+      if (qty <= 0) return;
+      const p = allProducts.find((pr) => pr.id === productId);
+      if (!p) return;
+      addItem({
+        id: p.id,
+        name: p.name,
+        description: p.description || '',
+        price: Number(p.price),
+        unit: p.unit,
+        category: p.categories?.name || '',
+        image: p.image_url || undefined,
+      }, qty);
+      added++;
+    });
+    if (added > 0) {
+      toast.success(`${added} produit(s) ajouté(s) au panier`);
+      setQuantities({});
+    }
+  };
+
+  if (products.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <p className="text-lg font-medium text-muted-foreground">Aucun produit trouvé</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
+              <TableHead className="w-24 text-center">Prix</TableHead>
+              <TableHead className="w-28 text-center">Unité</TableHead>
+              <TableHead className="w-28 text-center">Quantité</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {grouped.map((group) => (
+              <>
+                <TableRow key={`cat-${group.catName}`}>
+                  <TableCell
+                    colSpan={4}
+                    className="bg-primary/10 font-heading font-bold text-primary text-sm py-1.5 sticky left-0"
+                  >
+                    {group.catIcon} {group.catName}
+                  </TableCell>
+                </TableRow>
+                {group.items.map((product) => {
+                  const cartItem = cartItems.find((i) => i.product.id === product.id);
+                  const currentQty = quantities[product.id] || 0;
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap pl-6">
+                        {product.name}
+                        {cartItem && (
+                          <span className="ml-2 text-xs text-primary font-semibold">
+                            (déjà {cartItem.quantity} au panier)
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center text-sm">
+                        {Number(product.price).toFixed(2)} €
+                      </TableCell>
+                      <TableCell className="text-center text-sm text-muted-foreground">
+                        {product.unit}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={currentQty || ''}
+                          onChange={(e) => setQty(product.id, e.target.value)}
+                          className="w-20 mx-auto text-center h-8"
+                          placeholder="0"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {totalItems > 0 && (
+        <div className="sticky bottom-4 flex justify-end">
+          <Button onClick={handleAddToCart} size="lg" className="gap-2 shadow-lg">
+            <Zap className="h-4 w-4" />
+            Ajouter {totalItems} produit(s) au panier
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
