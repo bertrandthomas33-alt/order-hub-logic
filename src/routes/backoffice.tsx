@@ -358,8 +358,15 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
     else { toast.success(active ? 'Produit activé' : 'Produit désactivé'); onRefresh(); }
   };
 
+  const nav = useNavigate();
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'r') {
+        e.preventDefault();
+        nav({ to: '/recettes' });
+        return;
+      }
       if (!selectedProductId) return;
       if (e.ctrlKey && e.key === 'i') {
         e.preventDefault();
@@ -372,7 +379,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedProductId]);
+  }, [selectedProductId, nav]);
 
   const filtered = products.filter((p: any) => {
     const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.categories?.name?.toLowerCase().includes(search.toLowerCase());
