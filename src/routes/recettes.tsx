@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -269,6 +269,7 @@ function RecettesPage() {
             <TabsTrigger value="ingredients" className="gap-2"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
             <TabsTrigger value="fournisseurs" className="gap-2"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
             <TabsTrigger value="commandes" className="gap-2"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
+            <TabsTrigger value="stock" className="gap-2"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
           </TabsList>
 
           {/* ===== FICHES TECHNIQUES ===== */}
@@ -301,6 +302,11 @@ function RecettesPage() {
           {/* ===== COMMANDES ===== */}
           <TabsContent value="commandes">
             <CommandesTab recipes={recipes} ingredients={ingredients} />
+          </TabsContent>
+
+          {/* ===== STOCK ===== */}
+          <TabsContent value="stock">
+            <StockTab ingredients={ingredients} onRefresh={fetchData} />
           </TabsContent>
         </Tabs>
       </main>
