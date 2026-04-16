@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RecettesRouteImport } from './routes/recettes'
 import { Route as PanierRouteImport } from './routes/panier'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CatalogueRouteImport } from './routes/catalogue'
 import { Route as BackofficeRouteImport } from './routes/backoffice'
 import { Route as IndexRouteImport } from './routes/index'
 
+const RecettesRoute = RecettesRouteImport.update({
+  id: '/recettes',
+  path: '/recettes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PanierRoute = PanierRouteImport.update({
   id: '/panier',
   path: '/panier',
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
+  '/recettes': typeof RecettesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
+  '/recettes': typeof RecettesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,27 @@ export interface FileRoutesById {
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
+  '/recettes': typeof RecettesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/backoffice' | '/catalogue' | '/login' | '/panier'
+  fullPaths:
+    | '/'
+    | '/backoffice'
+    | '/catalogue'
+    | '/login'
+    | '/panier'
+    | '/recettes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/backoffice' | '/catalogue' | '/login' | '/panier'
-  id: '__root__' | '/' | '/backoffice' | '/catalogue' | '/login' | '/panier'
+  to: '/' | '/backoffice' | '/catalogue' | '/login' | '/panier' | '/recettes'
+  id:
+    | '__root__'
+    | '/'
+    | '/backoffice'
+    | '/catalogue'
+    | '/login'
+    | '/panier'
+    | '/recettes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,10 +99,18 @@ export interface RootRouteChildren {
   CatalogueRoute: typeof CatalogueRoute
   LoginRoute: typeof LoginRoute
   PanierRoute: typeof PanierRoute
+  RecettesRoute: typeof RecettesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/recettes': {
+      id: '/recettes'
+      path: '/recettes'
+      fullPath: '/recettes'
+      preLoaderRoute: typeof RecettesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/panier': {
       id: '/panier'
       path: '/panier'
@@ -125,6 +155,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogueRoute: CatalogueRoute,
   LoginRoute: LoginRoute,
   PanierRoute: PanierRoute,
+  RecettesRoute: RecettesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
