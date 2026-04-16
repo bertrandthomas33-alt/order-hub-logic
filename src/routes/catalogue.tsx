@@ -99,15 +99,21 @@ function CataloguePage() {
             <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
             <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
           </div>
-          <div className="relative ml-auto w-full max-w-xs">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Rechercher un produit..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="ml-auto flex items-center gap-3">
+            <Button onClick={() => setQuickOrderOpen(true)} variant="outline" className="gap-2">
+              <Zap className="h-4 w-4" />
+              Commande rapide
+            </Button>
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Rechercher un produit..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </div>
         </div>
 
