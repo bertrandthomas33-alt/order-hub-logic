@@ -154,7 +154,7 @@ function CataloguePage() {
 
         <div className="flex gap-6">
           {/* Sidebar: Categories only */}
-          <aside className="hidden w-56 shrink-0 md:block">
+          <aside className={`hidden w-56 shrink-0 md:block ${viewMode === 'table' ? '!hidden' : ''}`}>
             <div className="sticky top-24 space-y-1">
               <h2 className="mb-3 text-lg font-bold text-foreground">Catégories</h2>
               <button
