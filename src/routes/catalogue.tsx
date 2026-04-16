@@ -157,41 +157,27 @@ function CataloguePage() {
             </div>
           </aside>
 
-          {/* Mobile filters */}
-          <div className="mb-4 flex flex-wrap gap-2 md:hidden">
-            <Select value={activeWarehouse} onValueChange={(v) => { setActiveWarehouse(v); setActiveCategory(null); }}>
-              <SelectTrigger className="w-[180px]">
-                <Warehouse className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Entrepôt" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les entrepôts</SelectItem>
-                {warehouses.map((wh) => (
-                  <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-1.5">
+          {/* Mobile category filters */}
+          <div className="mb-4 flex flex-wrap gap-1.5 md:hidden">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+              }`}
+            >
+              Tout
+            </button>
+            {filteredCategories.map((cat) => (
               <button
-                onClick={() => setActiveCategory(null)}
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+                  activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
                 }`}
               >
-                Tout
+                {cat.icon} {cat.name}
               </button>
-              {filteredCategories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-                  }`}
-                >
-                  {cat.icon} {cat.name}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
 
           {/* Products grid */}
