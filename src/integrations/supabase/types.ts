@@ -128,6 +128,8 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          stock_min: number
+          stock_quantity: number
           supplier: string | null
           unit: string
           updated_at: string
@@ -138,6 +140,8 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          stock_min?: number
+          stock_quantity?: number
           supplier?: string | null
           unit?: string
           updated_at?: string
@@ -148,6 +152,8 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          stock_min?: number
+          stock_quantity?: number
           supplier?: string | null
           unit?: string
           updated_at?: string
