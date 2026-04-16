@@ -141,10 +141,8 @@ function BackofficePage() {
           ))}
         </div>
 
-        <div className="relative mb-6 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
+
+
 
         {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} onRefresh={() => {
           supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name, category_id, categories(name)))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
