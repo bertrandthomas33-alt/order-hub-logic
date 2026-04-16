@@ -364,7 +364,11 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 'r') {
         e.preventDefault();
-        nav({ to: '/recettes' });
+        if (selectedProductId) {
+          nav({ to: '/recettes', search: { productId: selectedProductId } });
+        } else {
+          nav({ to: '/recettes' });
+        }
         return;
       }
       if (!selectedProductId) return;
