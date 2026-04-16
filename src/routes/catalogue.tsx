@@ -49,6 +49,7 @@ function CataloguePage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeWarehouse, setActiveWarehouse] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [quickOrderOpen, setQuickOrderOpen] = useState(false);
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [categories, setCategories] = useState<DbCategory[]>([]);
   const [warehouses, setWarehouses] = useState<DbWarehouse[]>([]);
