@@ -4,7 +4,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Search, Warehouse } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const Route = createFileRoute('/catalogue')({
@@ -89,8 +89,8 @@ function CataloguePage() {
     <div className="min-h-screen">
       <Header />
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {/* Title + Search */}
-        <div className="mb-6 flex flex-wrap items-center gap-4">
+        {/* Title + Warehouse tabs + Search */}
+        <div className="mb-2 flex flex-wrap items-center gap-4">
           <div>
             <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
             <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
@@ -107,62 +107,53 @@ function CataloguePage() {
           </div>
         </div>
 
-        <div className="flex gap-6">
-          {/* Sidebar: Warehouses + Categories */}
-          <aside className="hidden w-56 shrink-0 md:block">
-            <div className="sticky top-24 space-y-6">
-              {/* Warehouses */}
-              <div>
-                <h2 className="mb-3 text-lg font-bold text-foreground">Entrepôts</h2>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                      activeWarehouse === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
-                    }`}
-                  >
-                    <Warehouse className="mr-2 inline h-4 w-4" />
-                    Tous les entrepôts
-                  </button>
-                  {warehouses.map((wh) => (
-                    <button
-                      key={wh.id}
-                      onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
-                      className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                        activeWarehouse === wh.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
-                      }`}
-                    >
-                      {wh.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        {/* Warehouse tabs */}
+        <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-3">
+          <button
+            onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+              activeWarehouse === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+            }`}
+          >
+            Tous les entrepôts
+          </button>
+          {warehouses.map((wh) => (
+            <button
+              key={wh.id}
+              onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                activeWarehouse === wh.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+              }`}
+            >
+              {wh.name}
+            </button>
+          ))}
+        </div>
 
-              {/* Categories */}
-              <div>
-                <h2 className="mb-3 text-lg font-bold text-foreground">Catégories</h2>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => setActiveCategory(null)}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                      !activeCategory ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
-                    }`}
-                  >
-                    Tout
-                  </button>
-                  {filteredCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setActiveCategory(cat.id)}
-                      className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                        activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
-                      }`}
-                    >
-                      {cat.icon && <span className="mr-1.5">{cat.icon}</span>}{cat.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+        <div className="flex gap-6">
+          {/* Sidebar: Categories only */}
+          <aside className="hidden w-56 shrink-0 md:block">
+            <div className="sticky top-24 space-y-1">
+              <h2 className="mb-3 text-lg font-bold text-foreground">Catégories</h2>
+              <button
+                onClick={() => setActiveCategory(null)}
+                className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                  !activeCategory ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                Tout
+              </button>
+              {filteredCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                    activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                  }`}
+                >
+                  {cat.icon && <span className="mr-1.5">{cat.icon}</span>}{cat.name}
+                </button>
+              ))}
             </div>
           </aside>
 
