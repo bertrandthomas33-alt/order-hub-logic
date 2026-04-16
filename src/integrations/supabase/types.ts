@@ -121,6 +121,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredients: {
+        Row: {
+          active: boolean
+          cost_per_unit: number
+          created_at: string
+          id: string
+          name: string
+          supplier: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          name: string
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          name?: string
+          supplier?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -263,6 +296,136 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_ingredients: {
+        Row: {
+          created_at: string
+          id: string
+          ingredient_id: string
+          quantity: number
+          recipe_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          quantity?: number
+          recipe_id: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_steps: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          image_url: string | null
+          instruction: string
+          recipe_id: string
+          step_number: number
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          image_url?: string | null
+          instruction: string
+          recipe_id: string
+          step_number: number
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          image_url?: string | null
+          instruction?: string
+          recipe_id?: string
+          step_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_steps_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          cook_time_minutes: number | null
+          created_at: string
+          id: string
+          image_url: string | null
+          instructions: string | null
+          notes: string | null
+          prep_time_minutes: number | null
+          product_id: string
+          updated_at: string
+          yield_quantity: number
+          yield_unit: string
+        }
+        Insert: {
+          cook_time_minutes?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          notes?: string | null
+          prep_time_minutes?: number | null
+          product_id: string
+          updated_at?: string
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Update: {
+          cook_time_minutes?: number | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          instructions?: string | null
+          notes?: string | null
+          prep_time_minutes?: number | null
+          product_id?: string
+          updated_at?: string
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
