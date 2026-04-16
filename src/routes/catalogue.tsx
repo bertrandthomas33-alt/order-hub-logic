@@ -25,6 +25,7 @@ interface DbProduct {
   unit: string;
   active: boolean;
   category_id: string;
+  image_url: string | null;
   categories: { id: string; name: string; icon: string | null; warehouse_id: string } | null;
 }
 
@@ -198,6 +199,7 @@ function CataloguePage() {
                       price: Number(product.price),
                       unit: product.unit,
                       category: product.categories?.name || '',
+                      image: product.image_url || undefined,
                     }}
                   />
                 ))}

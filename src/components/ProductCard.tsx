@@ -10,9 +10,13 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:shadow-lg hover:shadow-primary/5">
       <div className="relative aspect-[2/1] overflow-hidden bg-muted">
-        <div className="flex h-full items-center justify-center text-2xl">
-          {getCategoryEmoji(product.category)}
-        </div>
+        {product.image ? (
+          <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-2xl">
+            {getCategoryEmoji(product.category)}
+          </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <span className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
