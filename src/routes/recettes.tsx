@@ -296,7 +296,7 @@ function RecettesPage() {
 
           {/* ===== FOURNISSEURS ===== */}
           <TabsContent value="fournisseurs">
-            <FournisseursTab ingredients={ingredients} />
+            <FournisseursTab />
           </TabsContent>
 
           {/* ===== COMMANDES ===== */}
@@ -558,58 +558,85 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 }
 
 // ===== FOURNISSEURS TAB =====
-function FournisseursTab({ ingredients }: { ingredients: Ingredient[] }) {
-  const suppliers = ingredients.reduce<Record<string, { ingredients: Ingredient[]; totalCost: number }>>((acc, ing) => {
-    const sup = ing.supplier || 'Sans fournisseur';
-    if (!acc[sup]) acc[sup] = { ingredients: [], totalCost: 0 };
-    acc[sup].ingredients.push(ing);
-    acc[sup].totalCost += ing.cost_per_unit;
-    return acc;
-  }, {});
+type Supplier = {
+  id: string;
+  title: string;
+  name: string | null;
+  address: string | null;
+  city: string | null;
+  zip: string | null;
+  country: string | null;
+  phone: string | null;
+  mobile: string | null;
+  email: string | null;
+  active: boolean;
+};
 
-  const sortedSuppliers = Object.keys(suppliers).sort((a, b) =>
-    a === 'Sans fournisseur' ? 1 : b === 'Sans fournisseur' ? -1 : a.localeCompare(b)
+function FournisseursTab() {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('suppliers').select('*').order('title');
+      setSuppliers((data as any[]) || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const filtered = suppliers.filter(s =>
+    s.title.toLowerCase().includes(search.toLowerCase()) ||
+    (s.name && s.name.toLowerCase().includes(search.toLowerCase())) ||
+    (s.email && s.email.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
     <>
-      <div className="mb-6">
-        <h2 className="font-heading text-xl font-bold text-foreground">Fournisseurs</h2>
-        <p className="text-sm text-muted-foreground">Vue d'ensemble de vos fournisseurs d'ingrédients</p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-foreground">Fournisseurs</h2>
+          <p className="text-sm text-muted-foreground">{suppliers.length} fournisseur{suppliers.length > 1 ? 's' : ''} enregistré{suppliers.length > 1 ? 's' : ''}</p>
+        </div>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        </div>
       </div>
 
-      {sortedSuppliers.length === 0 ? (
+      {loading ? (
+        <p className="text-center text-muted-foreground py-10">Chargement...</p>
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Truck className="mb-4 h-12 w-12 text-muted-foreground/50" />
           <p className="text-lg font-medium text-muted-foreground">Aucun fournisseur</p>
-          <p className="mt-1 text-sm text-muted-foreground/70">Ajoutez des fournisseurs via l'onglet Ingrédients</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedSuppliers.map(supName => {
-            const sup = suppliers[supName];
-            return (
-              <div key={supName} className="rounded-xl border border-border bg-card p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Truck className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{supName}</h3>
-                    <p className="text-xs text-muted-foreground">{sup.ingredients.length} ingrédient{sup.ingredients.length > 1 ? 's' : ''}</p>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  {sup.ingredients.map(ing => (
-                    <div key={ing.id} className="flex items-center justify-between text-sm">
-                      <span className="text-foreground">{ing.name}</span>
-                      <span className="text-muted-foreground">{ing.cost_per_unit.toFixed(2)} € / {ing.unit}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="rounded-xl border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Société</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Téléphone</TableHead>
+                <TableHead>Mobile</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Ville</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(s => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.title}</TableCell>
+                  <TableCell>{s.name || '—'}</TableCell>
+                  <TableCell>{s.phone || '—'}</TableCell>
+                  <TableCell>{s.mobile || '—'}</TableCell>
+                  <TableCell>{s.email || '—'}</TableCell>
+                  <TableCell>{[s.zip, s.city].filter(Boolean).join(' ') || '—'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </>
