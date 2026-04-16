@@ -17,7 +17,12 @@ import {
 import { toast } from 'sonner';
 import { Navigate } from '@tanstack/react-router';
 
+type RecettesSearch = { productId?: string };
+
 export const Route = createFileRoute('/recettes')({
+  validateSearch: (search: Record<string, unknown>): RecettesSearch => ({
+    productId: typeof search.productId === 'string' ? search.productId : undefined,
+  }),
   head: () => ({
     meta: [
       { title: 'Fiches Techniques — JDC Distribution' },
@@ -72,6 +77,7 @@ type RecipeStep = {
 type View = 'list' | 'detail' | 'edit';
 
 function RecettesPage() {
+  const { productId: autoEditProductId } = Route.useSearch();
   const { role, isLoading: authLoading } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -102,6 +108,20 @@ function RecettesPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Auto-open edit for a specific product (from Ctrl+R in backoffice)
+  const [autoEditHandled, setAutoEditHandled] = useState(false);
+  useEffect(() => {
+    if (autoEditHandled || loading || !autoEditProductId) return;
+    setAutoEditHandled(true);
+    const recipe = recipes.find(r => r.product_id === autoEditProductId);
+    if (recipe) {
+      openEdit(recipe);
+    } else {
+      // No recipe yet — create one
+      handleCreateRecipe(autoEditProductId);
+    }
+  }, [autoEditProductId, loading, recipes, autoEditHandled]);
 
   if (authLoading) {
     return (
