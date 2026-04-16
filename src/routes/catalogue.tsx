@@ -217,6 +217,12 @@ function CataloguePage() {
           </div>
         </div>
       </div>
+      <QuickOrderDialog
+        open={quickOrderOpen}
+        onOpenChange={setQuickOrderOpen}
+        products={products}
+        warehouses={warehouses}
+      />
     </div>
   );
 }
