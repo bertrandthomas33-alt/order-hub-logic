@@ -50,6 +50,15 @@ export function Header() {
               Back-office
             </Link>
           )}
+          {role === 'admin' && (
+            <Link
+              to="/recettes"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              activeProps={{ className: 'rounded-lg px-4 py-2 text-sm font-medium bg-accent text-foreground' }}
+            >
+              Recettes
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -99,6 +108,11 @@ export function Header() {
           {role === 'admin' && (
             <Link to="/backoffice" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
               Back-office
+            </Link>
+          )}
+          {role === 'admin' && (
+            <Link to="/recettes" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
+              Recettes
             </Link>
           )}
           {isAuthenticated && (
