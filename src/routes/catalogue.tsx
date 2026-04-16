@@ -198,6 +198,7 @@ function CataloguePage() {
                       price: Number(product.price),
                       unit: product.unit,
                       category: product.categories?.name || '',
+                      image: product.image_url || undefined,
                     }}
                   />
                 ))}
