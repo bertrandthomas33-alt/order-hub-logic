@@ -117,10 +117,11 @@ function BackofficePage() {
           </Button>
         </div>
 
-        <div className="mb-8 grid gap-4 sm:grid-cols-4">
-          <StatCard label="Commandes" value={orders.length} />
-          <StatCard label="En attente" value={orders.filter((o: any) => o.status === 'pending').length} />
-        </div>
+        {orders.filter((o: any) => o.status === 'pending').length > 0 && (
+          <p className="mb-6 text-sm text-muted-foreground">
+            📋 <span className="font-semibold text-foreground">{orders.filter((o: any) => o.status === 'pending').length}</span> commande(s) en attente pour demain
+          </p>
+        )}
 
         <div className="mb-6 flex items-center gap-6 border-b border-border">
           {tabs.map((tab) => (
