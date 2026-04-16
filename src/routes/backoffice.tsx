@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
 import { EditClientDialog } from '@/components/EditClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
@@ -504,15 +505,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
                   <TableCell className="text-muted-foreground">/ {product.unit}</TableCell>
                   <TableCell className="text-right">{Number(product.stock ?? 0)}</TableCell>
                   <TableCell>
-                    {product.active ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
-                        <Check className="h-3 w-3" /> Oui
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                        <X className="h-3 w-3" /> Non
-                      </span>
-                    )}
+                    <Switch checked={product.active} onCheckedChange={(checked) => toggleActive(product.id, checked)} />
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
