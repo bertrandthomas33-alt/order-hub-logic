@@ -105,9 +105,16 @@ function CataloguePage() {
             <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Button onClick={() => setQuickOrderOpen(true)} variant="outline" className="gap-2">
-              <Zap className="h-4 w-4" />
-              Commande rapide
+            <Button
+              onClick={() => {
+                setViewMode(viewMode === 'grid' ? 'table' : 'grid');
+                if (viewMode === 'table') setQuantities({});
+              }}
+              variant={viewMode === 'table' ? 'default' : 'outline'}
+              className="gap-2"
+            >
+              {viewMode === 'grid' ? <Zap className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              {viewMode === 'grid' ? 'Commande rapide' : 'Vue catalogue'}
             </Button>
             <div className="relative w-full max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
