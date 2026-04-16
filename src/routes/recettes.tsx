@@ -46,7 +46,7 @@ type Recipe = {
   instructions: string | null;
   image_url: string | null;
   notes: string | null;
-  product?: { name: string; image_url: string | null; unit: string };
+  product?: { name: string; image_url: string | null; unit: string; category_id: string; categories: { name: string } | null };
   recipe_ingredients?: RecipeIngredient[];
   recipe_steps?: RecipeStep[];
 };
@@ -91,7 +91,7 @@ function RecettesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [recipesRes, ingredientsRes, productsRes] = await Promise.all([
-      supabase.from('recipes').select('*, product:products(name, image_url, unit), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
+      supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
       supabase.from('ingredients').select('*').eq('active', true).order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
     ]);
@@ -271,19 +271,35 @@ function RecettesPage() {
             <p className="text-lg font-medium text-muted-foreground">Aucune fiche technique</p>
             <p className="mt-1 text-sm text-muted-foreground/70">Créez votre première fiche pour un produit fini</p>
           </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map(recipe => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                totalCost={totalCost(recipe)}
-                onView={() => openDetail(recipe)}
-                onEdit={() => openEdit(recipe)}
-              />
-            ))}
-          </div>
-        )}
+        ) : (() => {
+          const grouped = filtered.reduce<Record<string, Recipe[]>>((acc, recipe) => {
+            const catName = recipe.product?.categories?.name || 'Sans catégorie';
+            if (!acc[catName]) acc[catName] = [];
+            acc[catName].push(recipe);
+            return acc;
+          }, {});
+          const sortedCategories = Object.keys(grouped).sort((a, b) => a === 'Sans catégorie' ? 1 : b === 'Sans catégorie' ? -1 : a.localeCompare(b));
+          return (
+            <div className="space-y-8">
+              {sortedCategories.map(catName => (
+                <section key={catName}>
+                  <h2 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h2>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {grouped[catName].map(recipe => (
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        totalCost={totalCost(recipe)}
+                        onView={() => openDetail(recipe)}
+                        onEdit={() => openEdit(recipe)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Dialog créer recette */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
