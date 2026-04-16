@@ -72,7 +72,7 @@ type RecipeStep = {
 type View = 'list' | 'detail' | 'edit';
 
 function RecettesPage() {
-  const { role, loading: authLoading } = useAuth();
+  const { role, isLoading: authLoading } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [products, setProducts] = useState<any[]>([]);
