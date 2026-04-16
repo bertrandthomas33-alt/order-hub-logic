@@ -3,11 +3,14 @@ import { Header } from '@/components/Header';
 import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
-import { Search, Zap } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Zap, LayoutGrid } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { QuickOrderDialog } from '@/components/QuickOrderDialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { useCartStore } from '@/lib/cart-store';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/catalogue')({
   head: () => ({
