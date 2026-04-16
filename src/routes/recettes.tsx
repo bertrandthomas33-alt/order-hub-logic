@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Navigate } from '@tanstack/react-router';
 
@@ -86,6 +87,7 @@ function RecettesPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<View>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [activeTab, setActiveTab] = useState('fiches');
 
   // Form state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -98,7 +100,7 @@ function RecettesPage() {
     setLoading(true);
     const [recipesRes, ingredientsRes, productsRes] = await Promise.all([
       supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
-      supabase.from('ingredients').select('*').eq('active', true).order('name'),
+      supabase.from('ingredients').select('*').order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
     ]);
     if (recipesRes.data) setRecipes(recipesRes.data as any);
@@ -118,7 +120,6 @@ function RecettesPage() {
     if (recipe) {
       openEdit(recipe);
     } else {
-      // No recipe yet — create one
       handleCreateRecipe(autoEditProductId);
     }
   }, [autoEditProductId, loading, recipes, autoEditHandled]);
@@ -190,7 +191,6 @@ function RecettesPage() {
     if (!editingRecipe?.id) return;
     const recipeId = editingRecipe.id;
 
-    // Update recipe fields
     const { error: recipeErr } = await supabase.from('recipes').update({
       yield_quantity: editingRecipe.yield_quantity || 1,
       yield_unit: editingRecipe.yield_unit || 'portion',
@@ -202,7 +202,6 @@ function RecettesPage() {
 
     if (recipeErr) { toast.error('Erreur sauvegarde recette'); return; }
 
-    // Replace ingredients
     await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
     if (editIngredients.length > 0) {
       await supabase.from('recipe_ingredients').insert(
@@ -210,7 +209,6 @@ function RecettesPage() {
       );
     }
 
-    // Replace steps
     await supabase.from('recipe_steps').delete().eq('recipe_id', recipeId);
     if (editSteps.length > 0) {
       await supabase.from('recipe_steps').insert(
@@ -236,8 +234,7 @@ function RecettesPage() {
     fetchData();
   };
 
-  // ---- RENDER ----
-
+  // ---- Detail / Edit views ----
   if (view === 'detail' && selectedRecipe) {
     return <RecipeDetailView recipe={selectedRecipe} totalCost={totalCost} onBack={() => { setView('list'); setSelectedRecipe(null); }} onEdit={() => openEdit(selectedRecipe)} onDelete={() => handleDeleteRecipe(selectedRecipe.id)} />;
   }
@@ -261,90 +258,461 @@ function RecettesPage() {
     );
   }
 
+  // ---- Main tabbed view ----
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">Fiches Techniques</h1>
-            <p className="text-sm text-muted-foreground">Recettes et coûts de revient de vos produits finis</p>
-          </div>
-          <Button onClick={() => setShowCreateDialog(true)} className="gap-2" disabled={productsWithoutRecipe.length === 0}>
-            <Plus className="h-4 w-4" />
-            Nouvelle fiche
-          </Button>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6 w-full justify-start gap-1">
+            <TabsTrigger value="fiches" className="gap-2"><ChefHat className="h-4 w-4" />Fiches Techniques</TabsTrigger>
+            <TabsTrigger value="ingredients" className="gap-2"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
+            <TabsTrigger value="fournisseurs" className="gap-2"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
+            <TabsTrigger value="commandes" className="gap-2"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
+          </TabsList>
 
-        <div className="relative mb-6 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-        </div>
+          {/* ===== FICHES TECHNIQUES ===== */}
+          <TabsContent value="fiches">
+            <FichesTab
+              filtered={filtered}
+              search={search}
+              setSearch={setSearch}
+              loading={loading}
+              productsWithoutRecipe={productsWithoutRecipe}
+              showCreateDialog={showCreateDialog}
+              setShowCreateDialog={setShowCreateDialog}
+              handleCreateRecipe={handleCreateRecipe}
+              totalCost={totalCost}
+              openDetail={openDetail}
+              openEdit={openEdit}
+            />
+          </TabsContent>
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
-            <ChefHat className="mb-4 h-12 w-12 text-muted-foreground/50" />
-            <p className="text-lg font-medium text-muted-foreground">Aucune fiche technique</p>
-            <p className="mt-1 text-sm text-muted-foreground/70">Créez votre première fiche pour un produit fini</p>
-          </div>
-        ) : (() => {
-          const grouped = filtered.reduce<Record<string, Recipe[]>>((acc, recipe) => {
-            const catName = recipe.product?.categories?.name || 'Sans catégorie';
-            if (!acc[catName]) acc[catName] = [];
-            acc[catName].push(recipe);
-            return acc;
-          }, {});
-          const sortedCategories = Object.keys(grouped).sort((a, b) => a === 'Sans catégorie' ? 1 : b === 'Sans catégorie' ? -1 : a.localeCompare(b));
-          return (
-            <div className="space-y-8">
-              {sortedCategories.map(catName => (
-                <section key={catName}>
-                  <h2 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h2>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {grouped[catName].map(recipe => (
-                      <RecipeCard
-                        key={recipe.id}
-                        recipe={recipe}
-                        totalCost={totalCost(recipe)}
-                        onView={() => openDetail(recipe)}
-                        onEdit={() => openEdit(recipe)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          );
-        })()}
+          {/* ===== INGRÉDIENTS ===== */}
+          <TabsContent value="ingredients">
+            <IngredientsTab ingredients={ingredients} onRefresh={fetchData} />
+          </TabsContent>
 
-        {/* Dialog créer recette */}
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nouvelle fiche technique</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground mb-4">Sélectionnez le produit fini :</p>
-            <div className="max-h-64 overflow-y-auto space-y-1">
-              {productsWithoutRecipe.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => handleCreateRecipe(p.id)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
-                >
-                  {p.image_url && <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
-                  <span className="font-medium">{p.name}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{(p as any).categories?.name}</span>
-                </button>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+          {/* ===== FOURNISSEURS ===== */}
+          <TabsContent value="fournisseurs">
+            <FournisseursTab ingredients={ingredients} />
+          </TabsContent>
+
+          {/* ===== COMMANDES ===== */}
+          <TabsContent value="commandes">
+            <CommandesTab recipes={recipes} ingredients={ingredients} />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
+  );
+}
+
+// ===== FICHES TAB =====
+function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, showCreateDialog, setShowCreateDialog, handleCreateRecipe, totalCost, openDetail, openEdit }: {
+  filtered: Recipe[];
+  search: string;
+  setSearch: (s: string) => void;
+  loading: boolean;
+  productsWithoutRecipe: any[];
+  showCreateDialog: boolean;
+  setShowCreateDialog: (v: boolean) => void;
+  handleCreateRecipe: (id: string) => void;
+  totalCost: (r: Recipe) => number;
+  openDetail: (r: Recipe) => void;
+  openEdit: (r: Recipe) => void;
+}) {
+  return (
+    <>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-foreground">Fiches Techniques</h2>
+          <p className="text-sm text-muted-foreground">Recettes et coûts de revient de vos produits finis</p>
+        </div>
+        <Button onClick={() => setShowCreateDialog(true)} className="gap-2" disabled={productsWithoutRecipe.length === 0}>
+          <Plus className="h-4 w-4" />Nouvelle fiche
+        </Button>
+      </div>
+
+      <div className="relative mb-6 max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+          <ChefHat className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <p className="text-lg font-medium text-muted-foreground">Aucune fiche technique</p>
+          <p className="mt-1 text-sm text-muted-foreground/70">Créez votre première fiche pour un produit fini</p>
+        </div>
+      ) : (() => {
+        const grouped = filtered.reduce<Record<string, Recipe[]>>((acc, recipe) => {
+          const catName = recipe.product?.categories?.name || 'Sans catégorie';
+          if (!acc[catName]) acc[catName] = [];
+          acc[catName].push(recipe);
+          return acc;
+        }, {});
+        const sortedCategories = Object.keys(grouped).sort((a, b) => a === 'Sans catégorie' ? 1 : b === 'Sans catégorie' ? -1 : a.localeCompare(b));
+        return (
+          <div className="space-y-8">
+            {sortedCategories.map(catName => (
+              <section key={catName}>
+                <h3 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {grouped[catName].map(recipe => (
+                    <RecipeCard
+                      key={recipe.id}
+                      recipe={recipe}
+                      totalCost={totalCost(recipe)}
+                      onView={() => openDetail(recipe)}
+                      onEdit={() => openEdit(recipe)}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        );
+      })()}
+
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvelle fiche technique</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">Sélectionnez le produit fini :</p>
+          <div className="max-h-64 overflow-y-auto space-y-1">
+            {productsWithoutRecipe.map(p => (
+              <button
+                key={p.id}
+                onClick={() => handleCreateRecipe(p.id)}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
+              >
+                {p.image_url && <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
+                <span className="font-medium">{p.name}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{(p as any).categories?.name}</span>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ===== INGRÉDIENTS TAB =====
+function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRefresh: () => void }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
+  const [editing, setEditing] = useState<Ingredient | null>(null);
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier: '' });
+
+  const filtered = ingredients.filter(i =>
+    i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (i.supplier || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier: '' });
+    setShowDialog(true);
+  };
+
+  const openEditIng = (ing: Ingredient) => {
+    setEditing(ing);
+    setForm({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit), supplier: ing.supplier || '' });
+    setShowDialog(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { toast.error('Nom requis'); return; }
+    const payload = {
+      name: form.name.trim(),
+      unit: form.unit,
+      cost_per_unit: parseFloat(form.cost_per_unit) || 0,
+      supplier: form.supplier.trim() || null,
+    };
+
+    if (editing) {
+      const { error } = await supabase.from('ingredients').update(payload).eq('id', editing.id);
+      if (error) { toast.error('Erreur mise à jour'); return; }
+      toast.success('Ingrédient mis à jour');
+    } else {
+      const { error } = await supabase.from('ingredients').insert(payload);
+      if (error) { toast.error('Erreur création'); return; }
+      toast.success('Ingrédient créé');
+    }
+    setShowDialog(false);
+    onRefresh();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Supprimer cet ingrédient ?')) return;
+    const { error } = await supabase.from('ingredients').delete().eq('id', id);
+    if (error) { toast.error('Erreur suppression (peut-être utilisé dans une recette)'); return; }
+    toast.success('Ingrédient supprimé');
+    onRefresh();
+  };
+
+  return (
+    <>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-foreground">Ingrédients</h2>
+          <p className="text-sm text-muted-foreground">Gérez votre base d'ingrédients avec coûts et fournisseurs</p>
+        </div>
+        <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" />Nouvel ingrédient</Button>
+      </div>
+
+      <div className="relative mb-6 max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+          <Package className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <p className="text-lg font-medium text-muted-foreground">Aucun ingrédient</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom</TableHead>
+                <TableHead>Unité</TableHead>
+                <TableHead className="text-right">Coût / unité</TableHead>
+                <TableHead>Fournisseur</TableHead>
+                <TableHead className="text-right">Statut</TableHead>
+                <TableHead className="w-20"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(ing => (
+                <TableRow key={ing.id}>
+                  <TableCell className="font-medium">{ing.name}</TableCell>
+                  <TableCell>{ing.unit}</TableCell>
+                  <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
+                  <TableCell className="text-muted-foreground">{ing.supplier || '—'}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      {ing.active ? 'Actif' : 'Inactif'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditIng(ing)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(ing.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Modifier l\'ingrédient' : 'Nouvel ingrédient'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-muted-foreground">Nom</label>
+              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-muted-foreground">Unité</label>
+                <Input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Coût / unité (€)</label>
+                <Input type="number" step="0.01" value={form.cost_per_unit} onChange={e => setForm({ ...form, cost_per_unit: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Fournisseur</label>
+              <Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} placeholder="Nom du fournisseur" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>Annuler</Button>
+            <Button onClick={handleSave}>{editing ? 'Mettre à jour' : 'Créer'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ===== FOURNISSEURS TAB =====
+function FournisseursTab({ ingredients }: { ingredients: Ingredient[] }) {
+  const suppliers = ingredients.reduce<Record<string, { ingredients: Ingredient[]; totalCost: number }>>((acc, ing) => {
+    const sup = ing.supplier || 'Sans fournisseur';
+    if (!acc[sup]) acc[sup] = { ingredients: [], totalCost: 0 };
+    acc[sup].ingredients.push(ing);
+    acc[sup].totalCost += ing.cost_per_unit;
+    return acc;
+  }, {});
+
+  const sortedSuppliers = Object.keys(suppliers).sort((a, b) =>
+    a === 'Sans fournisseur' ? 1 : b === 'Sans fournisseur' ? -1 : a.localeCompare(b)
+  );
+
+  return (
+    <>
+      <div className="mb-6">
+        <h2 className="font-heading text-xl font-bold text-foreground">Fournisseurs</h2>
+        <p className="text-sm text-muted-foreground">Vue d'ensemble de vos fournisseurs d'ingrédients</p>
+      </div>
+
+      {sortedSuppliers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+          <Truck className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <p className="text-lg font-medium text-muted-foreground">Aucun fournisseur</p>
+          <p className="mt-1 text-sm text-muted-foreground/70">Ajoutez des fournisseurs via l'onglet Ingrédients</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sortedSuppliers.map(supName => {
+            const sup = suppliers[supName];
+            return (
+              <div key={supName} className="rounded-xl border border-border bg-card p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Truck className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{supName}</h3>
+                    <p className="text-xs text-muted-foreground">{sup.ingredients.length} ingrédient{sup.ingredients.length > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {sup.ingredients.map(ing => (
+                    <div key={ing.id} className="flex items-center justify-between text-sm">
+                      <span className="text-foreground">{ing.name}</span>
+                      <span className="text-muted-foreground">{ing.cost_per_unit.toFixed(2)} € / {ing.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ===== COMMANDES TAB =====
+function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients: Ingredient[] }) {
+  // Aggregate all ingredient needs across recipes
+  const ingredientNeeds = recipes.reduce<Record<string, { ingredient: Ingredient; totalQty: number; unit: string; recipeCount: number }>>((acc, recipe) => {
+    recipe.recipe_ingredients?.forEach(ri => {
+      if (!ri.ingredient) return;
+      if (!acc[ri.ingredient_id]) {
+        acc[ri.ingredient_id] = { ingredient: ri.ingredient, totalQty: 0, unit: ri.unit, recipeCount: 0 };
+      }
+      acc[ri.ingredient_id].totalQty += ri.quantity;
+      acc[ri.ingredient_id].recipeCount += 1;
+    });
+    return acc;
+  }, {});
+
+  const sorted = Object.values(ingredientNeeds).sort((a, b) => a.ingredient.name.localeCompare(b.ingredient.name));
+
+  const totalEstimatedCost = sorted.reduce((sum, item) => sum + item.totalQty * item.ingredient.cost_per_unit, 0);
+
+  return (
+    <>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-foreground">Commandes fournisseurs</h2>
+          <p className="text-sm text-muted-foreground">Récapitulatif des besoins en ingrédients basé sur vos fiches techniques</p>
+        </div>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+          <ShoppingCart className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <p className="text-lg font-medium text-muted-foreground">Aucun besoin</p>
+          <p className="mt-1 text-sm text-muted-foreground/70">Ajoutez des ingrédients à vos fiches techniques</p>
+        </div>
+      ) : (
+        <>
+          <div className="mb-6 rounded-xl border border-border bg-card p-4 flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <DollarSign className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Coût total estimé (1 batch par recette)</p>
+              <p className="text-xl font-bold text-foreground">{totalEstimatedCost.toFixed(2)} €</p>
+            </div>
+          </div>
+
+          {/* Group by supplier */}
+          {(() => {
+            const bySupplier = sorted.reduce<Record<string, typeof sorted>>((acc, item) => {
+              const sup = item.ingredient.supplier || 'Sans fournisseur';
+              if (!acc[sup]) acc[sup] = [];
+              acc[sup].push(item);
+              return acc;
+            }, {});
+            const supNames = Object.keys(bySupplier).sort((a, b) =>
+              a === 'Sans fournisseur' ? 1 : b === 'Sans fournisseur' ? -1 : a.localeCompare(b)
+            );
+            return (
+              <div className="space-y-6">
+                {supNames.map(supName => {
+                  const items = bySupplier[supName];
+                  const supTotal = items.reduce((s, i) => s + i.totalQty * i.ingredient.cost_per_unit, 0);
+                  return (
+                    <section key={supName}>
+                      <div className="flex items-center justify-between mb-3 border-b border-border pb-2">
+                        <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-muted-foreground" />{supName}
+                        </h3>
+                        <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
+                      </div>
+                      <div className="rounded-xl border border-border bg-card overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Ingrédient</TableHead>
+                              <TableHead className="text-right">Quantité totale</TableHead>
+                              <TableHead className="text-right">Prix unitaire</TableHead>
+                              <TableHead className="text-right">Sous-total</TableHead>
+                              <TableHead className="text-right">Nb recettes</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {items.map(item => (
+                              <TableRow key={item.ingredient.id}>
+                                <TableCell className="font-medium">{item.ingredient.name}</TableCell>
+                                <TableCell className="text-right">{item.totalQty.toFixed(2)} {item.unit}</TableCell>
+                                <TableCell className="text-right">{item.ingredient.cost_per_unit.toFixed(2)} €/{item.ingredient.unit}</TableCell>
+                                <TableCell className="text-right font-medium">{(item.totalQty * item.ingredient.cost_per_unit).toFixed(2)} €</TableCell>
+                                <TableCell className="text-right text-muted-foreground">{item.recipeCount}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </>
+      )}
+    </>
   );
 }
 
@@ -408,7 +776,6 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
 
-        {/* Summary cards */}
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-xs text-muted-foreground">Rendement</p>
@@ -428,7 +795,6 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           </div>
         </div>
 
-        {/* Ingredients */}
         <section className="mb-8">
           <h2 className="mb-3 font-heading text-lg font-semibold text-foreground">Ingrédients</h2>
           {recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0 ? (
@@ -455,7 +821,6 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           )}
         </section>
 
-        {/* Steps */}
         <section className="mb-8">
           <h2 className="mb-3 font-heading text-lg font-semibold text-foreground">Étapes de préparation</h2>
           {steps.length > 0 ? (
@@ -481,7 +846,6 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           )}
         </section>
 
-        {/* Notes */}
         {recipe.notes && (
           <section>
             <h2 className="mb-3 font-heading text-lg font-semibold text-foreground">Notes</h2>
@@ -556,7 +920,6 @@ function RecipeEditView({
           </h1>
         </div>
 
-        {/* General info */}
         <section className="mb-8 rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-heading text-lg font-semibold text-foreground">Informations générales</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -583,7 +946,6 @@ function RecipeEditView({
           </div>
         </section>
 
-        {/* Ingredients */}
         <section className="mb-8 rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-heading text-lg font-semibold text-foreground">Ingrédients</h2>
@@ -630,7 +992,6 @@ function RecipeEditView({
           )}
         </section>
 
-        {/* Steps */}
         <section className="mb-8 rounded-xl border border-border bg-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-heading text-lg font-semibold text-foreground">Étapes</h2>
@@ -677,13 +1038,11 @@ function RecipeEditView({
           )}
         </section>
 
-        {/* Action buttons */}
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={onCancel}>Annuler</Button>
           <Button onClick={onSave}>Sauvegarder</Button>
         </div>
 
-        {/* New ingredient dialog */}
         <Dialog open={showIngredientDialog} onOpenChange={setShowIngredientDialog}>
           <DialogContent>
             <DialogHeader>
