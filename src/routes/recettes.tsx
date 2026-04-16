@@ -572,23 +572,97 @@ type Supplier = {
   active: boolean;
 };
 
+const emptySupplier = { title: '', name: '', address: '', city: '', zip: '', country: 'fr', phone: '', mobile: '', email: '' };
+
 function FournisseursTab() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<Supplier | null>(null);
+  const [deleting, setDeleting] = useState<Supplier | null>(null);
+  const [form, setForm] = useState(emptySupplier);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from('suppliers').select('*').order('title');
-      setSuppliers((data as any[]) || []);
-      setLoading(false);
-    })();
+  const load = useCallback(async () => {
+    const { data } = await supabase.from('suppliers').select('*').order('title');
+    setSuppliers((data as any[]) || []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = suppliers.filter(s =>
     s.title.toLowerCase().includes(search.toLowerCase()) ||
     (s.name && s.name.toLowerCase().includes(search.toLowerCase())) ||
     (s.email && s.email.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptySupplier);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (s: Supplier) => {
+    setEditing(s);
+    setForm({
+      title: s.title, name: s.name || '', address: s.address || '',
+      city: s.city || '', zip: s.zip || '', country: s.country || 'fr',
+      phone: s.phone || '', mobile: s.mobile || '', email: s.email || '',
+    });
+    setDialogOpen(true);
+  };
+
+  const openDelete = (s: Supplier) => {
+    setDeleting(s);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim()) { toast.error('Le nom de société est requis'); return; }
+    setSaving(true);
+    const payload = {
+      title: form.title.trim(),
+      name: form.name.trim() || null,
+      address: form.address.trim() || null,
+      city: form.city.trim() || null,
+      zip: form.zip.trim() || null,
+      country: form.country.trim() || null,
+      phone: form.phone.trim() || null,
+      mobile: form.mobile.trim() || null,
+      email: form.email.trim() || null,
+    };
+    if (editing) {
+      const { error } = await supabase.from('suppliers').update(payload as any).eq('id', editing.id);
+      if (error) toast.error('Erreur lors de la modification');
+      else toast.success('Fournisseur modifié');
+    } else {
+      const { error } = await supabase.from('suppliers').insert(payload as any);
+      if (error) toast.error('Erreur lors de la création');
+      else toast.success('Fournisseur créé');
+    }
+    setSaving(false);
+    setDialogOpen(false);
+    load();
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    const { error } = await supabase.from('suppliers').delete().eq('id', deleting.id);
+    if (error) toast.error('Erreur lors de la suppression');
+    else toast.success('Fournisseur supprimé');
+    setDeleteDialogOpen(false);
+    setDeleting(null);
+    load();
+  };
+
+  const field = (label: string, key: keyof typeof form, type = 'text') => (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-foreground">{label}</label>
+      <Input type={type} value={form[key]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} />
+    </div>
   );
 
   return (
@@ -598,9 +672,12 @@ function FournisseursTab() {
           <h2 className="font-heading text-xl font-bold text-foreground">Fournisseurs</h2>
           <p className="text-sm text-muted-foreground">{suppliers.length} fournisseur{suppliers.length > 1 ? 's' : ''} enregistré{suppliers.length > 1 ? 's' : ''}</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+        <div className="flex gap-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Button onClick={openCreate} className="gap-2 shrink-0"><Plus className="h-4 w-4" />Ajouter</Button>
         </div>
       </div>
 
@@ -610,6 +687,7 @@ function FournisseursTab() {
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Truck className="mb-4 h-12 w-12 text-muted-foreground/50" />
           <p className="text-lg font-medium text-muted-foreground">Aucun fournisseur</p>
+          <Button onClick={openCreate} variant="outline" className="mt-4 gap-2"><Plus className="h-4 w-4" />Ajouter un fournisseur</Button>
         </div>
       ) : (
         <div className="rounded-xl border border-border overflow-hidden">
@@ -622,6 +700,7 @@ function FournisseursTab() {
                 <TableHead>Mobile</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Ville</TableHead>
+                <TableHead className="w-20">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -633,12 +712,62 @@ function FournisseursTab() {
                   <TableCell>{s.mobile || '—'}</TableCell>
                   <TableCell>{s.email || '—'}</TableCell>
                   <TableCell>{[s.zip, s.city].filter(Boolean).join(' ') || '—'}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => openDelete(s)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       )}
+
+      {/* Create / Edit dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editing ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {field('Société *', 'title')}
+            <div className="grid grid-cols-2 gap-4">
+              {field('Contact', 'name')}
+              {field('Email', 'email', 'email')}
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {field('Téléphone', 'phone', 'tel')}
+              {field('Mobile', 'mobile', 'tel')}
+            </div>
+            {field('Adresse', 'address')}
+            <div className="grid grid-cols-3 gap-4">
+              {field('Code postal', 'zip')}
+              {field('Ville', 'city')}
+              {field('Pays', 'country')}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? 'Enregistrement...' : editing ? 'Modifier' : 'Créer'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer le fournisseur</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Êtes-vous sûr de vouloir supprimer <strong>{deleting?.title}</strong> ? Cette action est irréversible.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDelete}>Supprimer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
