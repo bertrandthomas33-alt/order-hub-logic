@@ -120,7 +120,6 @@ function BackofficePage() {
         <div className="mb-8 grid gap-4 sm:grid-cols-4">
           <StatCard label="Commandes" value={orders.length} />
           <StatCard label="En attente" value={orders.filter((o: any) => o.status === 'pending').length} />
-          <StatCard label="Produits" value={products.length} />
           <StatCard label="Clients actifs" value={clients.filter((c: any) => c.active).length} />
         </div>
 
