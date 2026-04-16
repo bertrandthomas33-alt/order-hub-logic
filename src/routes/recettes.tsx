@@ -296,7 +296,7 @@ function RecettesPage() {
 
           {/* ===== FOURNISSEURS ===== */}
           <TabsContent value="fournisseurs">
-            <FournisseursTab ingredients={ingredients} />
+            <FournisseursTab />
           </TabsContent>
 
           {/* ===== COMMANDES ===== */}
