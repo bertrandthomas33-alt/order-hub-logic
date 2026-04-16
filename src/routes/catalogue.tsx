@@ -88,15 +88,88 @@ function CataloguePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <div className="mb-8 flex flex-wrap items-center gap-4">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        {/* Title + Search */}
+        <div className="mb-6 flex flex-wrap items-center gap-4">
           <div>
             <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
             <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
           </div>
-          <div className="ml-auto">
+          <div className="relative ml-auto w-full max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher un produit..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-6">
+          {/* Sidebar: Warehouses + Categories */}
+          <aside className="hidden w-56 shrink-0 md:block">
+            <div className="sticky top-24 space-y-6">
+              {/* Warehouses */}
+              <div>
+                <h2 className="mb-3 text-lg font-bold text-foreground">Entrepôts</h2>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                      activeWarehouse === 'all' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                    }`}
+                  >
+                    <Warehouse className="mr-2 inline h-4 w-4" />
+                    Tous les entrepôts
+                  </button>
+                  {warehouses.map((wh) => (
+                    <button
+                      key={wh.id}
+                      onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
+                      className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                        activeWarehouse === wh.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {wh.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Categories */}
+              <div>
+                <h2 className="mb-3 text-lg font-bold text-foreground">Catégories</h2>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setActiveCategory(null)}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                      !activeCategory ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                    }`}
+                  >
+                    Tout
+                  </button>
+                  {filteredCategories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+                        activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {cat.icon && <span className="mr-1.5">{cat.icon}</span>}{cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Mobile filters */}
+          <div className="mb-4 flex flex-wrap gap-2 md:hidden">
             <Select value={activeWarehouse} onValueChange={(v) => { setActiveWarehouse(v); setActiveCategory(null); }}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[180px]">
                 <Warehouse className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Entrepôt" />
               </SelectTrigger>
@@ -107,63 +180,54 @@ function CataloguePage() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setActiveCategory(null)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                Tout
+              </button>
+              {filteredCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+                  }`}
+                >
+                  {cat.icon} {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Products grid */}
+          <div className="flex-1">
+            {filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-lg font-medium text-muted-foreground">Aucun produit trouvé</p>
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      description: product.description || '',
+                      price: Number(product.price),
+                      unit: product.unit,
+                      category: product.categories?.name || '',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Rechercher un produit..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-input bg-card py-3 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-
-        <div className="mb-8 flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
-          >
-            Tout
-          </button>
-          {filteredCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-              }`}
-            >
-              {cat.icon} {cat.name}
-            </button>
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-lg font-medium text-muted-foreground">Aucun produit trouvé</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={{
-                  id: product.id,
-                  name: product.name,
-                  description: product.description || '',
-                  price: Number(product.price),
-                  unit: product.unit,
-                  category: product.categories?.name || '',
-                }}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
