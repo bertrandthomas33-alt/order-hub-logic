@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -269,6 +269,7 @@ function RecettesPage() {
             <TabsTrigger value="ingredients" className="gap-2"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
             <TabsTrigger value="fournisseurs" className="gap-2"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
             <TabsTrigger value="commandes" className="gap-2"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
+            <TabsTrigger value="stock" className="gap-2"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
           </TabsList>
 
           {/* ===== FICHES TECHNIQUES ===== */}
@@ -301,6 +302,11 @@ function RecettesPage() {
           {/* ===== COMMANDES ===== */}
           <TabsContent value="commandes">
             <CommandesTab recipes={recipes} ingredients={ingredients} />
+          </TabsContent>
+
+          {/* ===== STOCK ===== */}
+          <TabsContent value="stock">
+            <StockTab ingredients={ingredients} onRefresh={fetchData} />
           </TabsContent>
         </Tabs>
       </main>
@@ -711,6 +717,106 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
             );
           })()}
         </>
+      )}
+    </>
+  );
+}
+
+// ===== STOCK TAB =====
+function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRefresh: () => void }) {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filtered = ingredients.filter(i =>
+    i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (i.supplier || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const lowStock = filtered.filter(i => (i as any).stock_min > 0 && (i as any).stock_quantity <= (i as any).stock_min);
+  const okStock = filtered.filter(i => !((i as any).stock_min > 0 && (i as any).stock_quantity <= (i as any).stock_min));
+
+  const handleUpdateStock = async (id: string, qty: number) => {
+    const { error } = await supabase.from('ingredients').update({ stock_quantity: qty } as any).eq('id', id);
+    if (error) { toast.error('Erreur mise à jour stock'); return; }
+    onRefresh();
+  };
+
+  return (
+    <>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-bold text-foreground">Stock ingrédients</h2>
+          <p className="text-sm text-muted-foreground">Suivez les quantités en stock et les seuils d'alerte</p>
+        </div>
+      </div>
+
+      <div className="relative mb-6 max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+      </div>
+
+      {lowStock.length > 0 && (
+        <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <h3 className="font-semibold text-destructive mb-2 flex items-center gap-2">
+            <Warehouse className="h-4 w-4" />Stock bas — {lowStock.length} ingrédient{lowStock.length > 1 ? 's' : ''}
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {lowStock.map(ing => (
+              <span key={ing.id} className="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+                {ing.name} — {(ing as any).stock_quantity} {ing.unit}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+          <Warehouse className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <p className="text-lg font-medium text-muted-foreground">Aucun ingrédient</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Ingrédient</TableHead>
+                <TableHead>Fournisseur</TableHead>
+                <TableHead className="text-right">En stock</TableHead>
+                <TableHead className="text-right">Seuil min</TableHead>
+                <TableHead className="text-right">Statut</TableHead>
+                <TableHead className="w-32"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(ing => {
+                const qty = (ing as any).stock_quantity ?? 0;
+                const min = (ing as any).stock_min ?? 0;
+                const isLow = min > 0 && qty <= min;
+                return (
+                  <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
+                    <TableCell className="font-medium">{ing.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{ing.supplier || '—'}</TableCell>
+                    <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isLow ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+                        {isLow ? 'Bas' : 'OK'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="h-8 w-24 ml-auto"
+                        value={qty}
+                        onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </>
   );
