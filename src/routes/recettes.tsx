@@ -43,6 +43,7 @@ type Ingredient = {
   supplier_ref?: { id: string; title: string } | null;
   stock_quantity: number;
   uvc: string | null;
+  uvc_quantity: number;
   active: boolean;
 };
 
@@ -421,7 +422,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_quantity: '1', uvc_price: '' });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
   useEffect(() => {
@@ -438,7 +439,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_quantity: '1', uvc_price: '' });
     setShowDialog(true);
   };
 
