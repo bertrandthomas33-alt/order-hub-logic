@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Navigate } from '@tanstack/react-router';
+import { ImageUpload } from '@/components/ImageUpload';
 
 type RecettesSearch = { productId?: string };
 
@@ -1528,6 +1529,10 @@ function RecipeEditView({
               <label className="text-xs text-muted-foreground">Cuisson (min)</label>
               <Input type="number" value={recipe.cook_time_minutes ?? ''} onChange={e => setRecipe({ ...recipe, cook_time_minutes: parseInt(e.target.value) || null })} />
             </div>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Image</label>
+            <ImageUpload value={recipe.image_url || ''} onChange={(url: string) => setRecipe({ ...recipe, image_url: url })} />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Notes</label>
