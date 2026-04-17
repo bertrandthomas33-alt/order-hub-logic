@@ -209,6 +209,7 @@ function RecettesPage() {
       cook_time_minutes: editingRecipe.cook_time_minutes,
       instructions: editingRecipe.instructions,
       notes: editingRecipe.notes,
+      image_url: editingRecipe.image_url,
     }).eq('id', recipeId);
 
     if (recipeErr) { toast.error('Erreur sauvegarde recette'); return; }
@@ -230,6 +231,17 @@ function RecettesPage() {
           duration_minutes: s.duration_minutes,
         }))
       );
+    }
+
+    // Recalcul du prix de revient du produit à partir des ingrédients de la recette
+    if (editingRecipe.product_id && editIngredients.length > 0) {
+      const totalCost = editIngredients.reduce((sum, ri) => {
+        const ing = ingredients.find(i => i.id === ri.ingredient_id);
+        return sum + (ing?.cost_per_unit || 0) * (ri.quantity || 0);
+      }, 0);
+      const yieldQty = editingRecipe.yield_quantity || 1;
+      const costPerUnit = totalCost / yieldQty;
+      await supabase.from('products').update({ cost_price: Number(costPerUnit.toFixed(4)) }).eq('id', editingRecipe.product_id);
     }
 
     toast.success('Recette sauvegardée');
