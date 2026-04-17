@@ -158,6 +158,29 @@ function CataloguePage() {
           ))}
         </div>
 
+        {/* Mobile category filters (above products) */}
+        <div className="mb-4 flex flex-wrap gap-1.5 md:hidden">
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+            }`}
+          >
+            Tout
+          </button>
+          {filteredCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
+              }`}
+            >
+              {cat.icon} {cat.name}
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-6">
           {/* Sidebar: Categories only */}
           <aside className={`hidden w-56 shrink-0 md:block ${viewMode === 'table' ? '!hidden' : ''}`}>
@@ -184,29 +207,6 @@ function CataloguePage() {
               ))}
             </div>
           </aside>
-
-          {/* Mobile category filters */}
-          <div className="mb-4 flex flex-wrap gap-1.5 md:hidden">
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-              }`}
-            >
-              Tout
-            </button>
-            {filteredCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-                }`}
-              >
-                {cat.icon} {cat.name}
-              </button>
-            ))}
-          </div>
 
           {/* Products content */}
           <div className="flex-1">
