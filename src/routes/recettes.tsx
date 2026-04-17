@@ -1088,7 +1088,7 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
         <>
           <div className="mb-6 rounded-xl border border-border bg-card p-4 flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <Euro className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Coût total estimé (1 batch par recette)</p>
