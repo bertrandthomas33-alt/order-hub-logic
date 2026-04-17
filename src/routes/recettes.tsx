@@ -594,6 +594,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
               <TableRow>
                 <TableHead>Nom</TableHead>
                 <TableHead>Unité</TableHead>
+                <TableHead>UVC</TableHead>
                 <TableHead className="text-right">Coût / unité</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Fournisseur</TableHead>
@@ -606,6 +607,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                 <TableRow key={ing.id}>
                   <TableCell className="font-medium">{ing.name}</TableCell>
                   <TableCell>{ing.unit}</TableCell>
+                  <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                   <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
                   <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
                   <TableCell className="text-muted-foreground">{ing.supplier_ref?.title || ing.supplier || '—'}</TableCell>
