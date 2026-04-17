@@ -390,7 +390,27 @@ function RecettesPage() {
           </TabsContent>
         </Tabs>
       </main>
+      <DeleteRecipeDialog recipe={recipeToDelete} onCancel={() => setRecipeToDelete(null)} onConfirm={() => recipeToDelete && handleDeleteRecipe(recipeToDelete.id)} />
     </div>
+  );
+}
+
+function DeleteRecipeDialog({ recipe, onCancel, onConfirm }: { recipe: Recipe | null; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <AlertDialog open={!!recipe} onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer la fiche technique ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            La fiche technique de <span className="font-semibold text-foreground">{recipe?.product?.name}</span> sera définitivement supprimée, ainsi que ses ingrédients et étapes. Le produit lui-même ne sera pas supprimé. Cette action est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Supprimer</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
