@@ -332,9 +332,11 @@ function RecettesPage() {
               setSearch={setSearch}
               loading={loading}
               productsWithoutRecipe={productsWithoutRecipe}
+              categories={categories}
               showCreateDialog={showCreateDialog}
               setShowCreateDialog={setShowCreateDialog}
               handleCreateRecipe={handleCreateRecipe}
+              handleCreateNewProductRecipe={handleCreateNewProductRecipe}
               totalCost={totalCost}
               openDetail={openDetail}
               openEdit={openEdit}
