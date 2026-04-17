@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Navigate } from '@tanstack/react-router';
+import { ImageUpload } from '@/components/ImageUpload';
 
 type RecettesSearch = { productId?: string };
 
