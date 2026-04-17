@@ -41,6 +41,8 @@ type Ingredient = {
   supplier: string | null;
   supplier_id: string | null;
   supplier_ref?: { id: string; title: string } | null;
+  stock_quantity: number;
+  uvc: string | null;
   active: boolean;
 };
 
@@ -419,7 +421,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc: '' });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
   useEffect(() => {
@@ -436,13 +438,20 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc: '' });
     setShowDialog(true);
   };
 
   const openEditIng = (ing: Ingredient) => {
     setEditing(ing);
-    setForm({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit), supplier_id: ing.supplier_id || '' });
+    setForm({
+      name: ing.name,
+      unit: ing.unit,
+      cost_per_unit: String(ing.cost_per_unit),
+      supplier_id: ing.supplier_id || '',
+      stock_quantity: String(ing.stock_quantity ?? ''),
+      uvc: ing.uvc || '',
+    });
     setShowDialog(true);
   };
 
@@ -453,6 +462,8 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
       unit: form.unit,
       cost_per_unit: parseFloat(form.cost_per_unit) || 0,
       supplier_id: form.supplier_id || null,
+      stock_quantity: parseFloat(form.stock_quantity) || 0,
+      uvc: form.uvc.trim() || null,
     };
 
     if (editing) {
@@ -504,6 +515,8 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                 <TableHead>Nom</TableHead>
                 <TableHead>Unité</TableHead>
                 <TableHead className="text-right">Coût / unité</TableHead>
+                <TableHead className="text-right">Stock</TableHead>
+                <TableHead>UVC</TableHead>
                 <TableHead>Fournisseur</TableHead>
                 <TableHead className="text-right">Statut</TableHead>
                 <TableHead className="w-20"></TableHead>
@@ -515,6 +528,8 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                   <TableCell className="font-medium">{ing.name}</TableCell>
                   <TableCell>{ing.unit}</TableCell>
                   <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
+                  <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
+                  <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{ing.supplier_ref?.title || ing.supplier || '—'}</TableCell>
                   <TableCell className="text-right">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
@@ -552,6 +567,16 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
               <div>
                 <label className="text-sm text-muted-foreground">Coût / unité (€)</label>
                 <Input type="number" step="0.01" value={form.cost_per_unit} onChange={e => setForm({ ...form, cost_per_unit: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-muted-foreground">Stock</label>
+                <Input type="number" step="0.01" value={form.stock_quantity} onChange={e => setForm({ ...form, stock_quantity: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">UVC (unité de vente)</label>
+                <Input placeholder="ex: carton de 6, sachet 1kg" value={form.uvc} onChange={e => setForm({ ...form, uvc: e.target.value })} />
               </div>
             </div>
             <div>
