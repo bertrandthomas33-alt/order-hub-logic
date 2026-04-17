@@ -445,26 +445,32 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const openEditIng = (ing: Ingredient) => {
     setEditing(ing);
+    const uvcQty = Number(ing.uvc_quantity) || 1;
+    const cost = Number(ing.cost_per_unit) || 0;
     setForm({
       name: ing.name,
       unit: ing.unit,
-      cost_per_unit: String(ing.cost_per_unit),
+      cost_per_unit: String(cost || ''),
       supplier_id: ing.supplier_id || '',
       stock_quantity: String(ing.stock_quantity ?? ''),
-      uvc: ing.uvc || '',
+      uvc_quantity: String(uvcQty),
+      uvc_price: cost ? (cost * uvcQty).toFixed(2) : '',
     });
     setShowDialog(true);
   };
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
+    const uvcQty = parseFloat(form.uvc_quantity) || 1;
+    const costPerUnit = parseFloat(form.cost_per_unit) || 0;
     const payload = {
       name: form.name.trim(),
       unit: form.unit,
-      cost_per_unit: parseFloat(form.cost_per_unit) || 0,
+      cost_per_unit: costPerUnit,
       supplier_id: form.supplier_id || null,
       stock_quantity: parseFloat(form.stock_quantity) || 0,
-      uvc: form.uvc.trim() || null,
+      uvc_quantity: uvcQty,
+      uvc: `${uvcQty} ${form.unit}`,
     };
 
     if (editing) {
