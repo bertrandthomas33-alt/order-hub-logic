@@ -511,6 +511,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
                         totalCost={totalCost(recipe)}
                         onView={() => openDetail(recipe)}
                         onEdit={() => openEdit(recipe)}
+                        onDelete={() => onDelete(recipe)}
                       />
                     ))}
                   </div>
