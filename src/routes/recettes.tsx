@@ -1188,6 +1188,7 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                     <TableHeader>
                       <TableRow>
                         <TableHead>Ingrédient</TableHead>
+                        <TableHead>UVC</TableHead>
                         <TableHead className="text-right">En stock</TableHead>
                         <TableHead className="text-right">Seuil min</TableHead>
                         <TableHead className="text-right">Statut</TableHead>
