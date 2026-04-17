@@ -467,21 +467,41 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_quantity: '1', uvc_price: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
     setShowDialog(true);
+  };
+
+  // Try to parse stored uvc label like "12x500 g" or "5 kg" → pieces & per-piece qty
+  const parseUvcLabel = (label: string | null, unit: string, totalQty: number): { pieces: string; pieceQty: string; pieceUnit: string } => {
+    const defaultSub = unit === 'kg' ? 'kg' : unit === 'litre' ? 'litre' : 'unite';
+    if (label) {
+      const m = label.match(/^\s*(\d+(?:[.,]\d+)?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)\s*([a-zA-Zé]+)?/);
+      if (m) {
+        const pieces = m[1].replace(',', '.');
+        const qty = m[2].replace(',', '.');
+        const sub = (m[3] || defaultSub).toLowerCase();
+        const allowed = unit === 'kg' ? ['kg', 'g'] : unit === 'litre' ? ['litre', 'ml', 'l'] : ['unite', 'u'];
+        const normalized = sub === 'l' ? 'litre' : sub === 'u' ? 'unite' : sub;
+        return { pieces, pieceQty: qty, pieceUnit: allowed.includes(normalized) ? normalized : defaultSub };
+      }
+    }
+    return { pieces: '1', pieceQty: String(totalQty || 1), pieceUnit: defaultSub };
   };
 
   const openEditIng = (ing: Ingredient) => {
     setEditing(ing);
     const uvcQty = Number(ing.uvc_quantity) || 1;
     const cost = Number(ing.cost_per_unit) || 0;
+    const parsed = parseUvcLabel(ing.uvc, ing.unit, uvcQty);
     setForm({
       name: ing.name,
       unit: ing.unit,
       cost_per_unit: String(cost || ''),
       supplier_id: ing.supplier_id || '',
       stock_quantity: String(ing.stock_quantity ?? ''),
-      uvc_quantity: String(uvcQty),
+      uvc_pieces: parsed.pieces,
+      uvc_piece_qty: parsed.pieceQty,
+      uvc_piece_unit: parsed.pieceUnit,
       uvc_price: cost ? (cost * uvcQty).toFixed(2) : '',
     });
     setShowDialog(true);
@@ -489,8 +509,13 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
-    const uvcQty = parseFloat(form.uvc_quantity) || 1;
+    const uvcQty = computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit) || 1;
     const costPerUnit = parseFloat(form.cost_per_unit) || 0;
+    const pieces = parseFloat(form.uvc_pieces) || 1;
+    const pieceQty = parseFloat(form.uvc_piece_qty) || 0;
+    const uvcLabel = pieces > 1
+      ? `${pieces}x${pieceQty} ${form.uvc_piece_unit}`
+      : `${pieceQty} ${form.uvc_piece_unit}`;
     const payload = {
       name: form.name.trim(),
       unit: form.unit,
@@ -498,7 +523,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
       supplier_id: form.supplier_id || null,
       stock_quantity: parseFloat(form.stock_quantity) || 0,
       uvc_quantity: uvcQty,
-      uvc: `${uvcQty} ${form.unit}`,
+      uvc: uvcLabel,
     };
 
     if (editing) {
