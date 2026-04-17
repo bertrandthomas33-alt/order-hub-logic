@@ -562,6 +562,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      recalc_product_cost_from_recipe: {
+        Args: { _product_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "pdv"
