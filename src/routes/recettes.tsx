@@ -565,9 +565,21 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
         <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" />Nouvel ingrédient</Button>
       </div>
 
-      <div className="relative mb-6 max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+          <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Filtrer par fournisseur" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les fournisseurs</SelectItem>
+            <SelectItem value="none">— Sans fournisseur —</SelectItem>
+            {suppliers.map(s => (
+              <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
