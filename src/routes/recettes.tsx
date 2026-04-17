@@ -190,7 +190,7 @@ function RecettesPage() {
       cost_price: 0,
       stock: 0,
       unit: 'portion',
-      active: true,
+      active: false,
     }).select('id, name, image_url, unit, category_id, categories(name)').single();
     if (prodErr || !product) { toast.error('Erreur création produit'); console.error(prodErr); return; }
 
