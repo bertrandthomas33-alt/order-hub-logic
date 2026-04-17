@@ -102,6 +102,7 @@ function RecettesPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [activeTab, setActiveTab] = useState('fiches');
   const [editIngredientId, setEditIngredientId] = useState<string | null>(null);
+  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
 
   // Form state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
