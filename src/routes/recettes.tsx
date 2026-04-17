@@ -95,6 +95,7 @@ function RecettesPage() {
   const [view, setView] = useState<View>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [activeTab, setActiveTab] = useState('fiches');
+  const [editIngredientId, setEditIngredientId] = useState<string | null>(null);
 
   // Form state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -298,7 +299,12 @@ function RecettesPage() {
 
           {/* ===== INGRÉDIENTS ===== */}
           <TabsContent value="ingredients">
-            <IngredientsTab ingredients={ingredients} onRefresh={fetchData} />
+            <IngredientsTab
+              ingredients={ingredients}
+              onRefresh={fetchData}
+              autoEditId={editIngredientId}
+              onAutoEditConsumed={() => setEditIngredientId(null)}
+            />
           </TabsContent>
 
           {/* ===== FOURNISSEURS ===== */}
@@ -313,7 +319,14 @@ function RecettesPage() {
 
           {/* ===== STOCK ===== */}
           <TabsContent value="stock">
-            <StockTab ingredients={ingredients} onRefresh={fetchData} />
+            <StockTab
+              ingredients={ingredients}
+              onRefresh={fetchData}
+              onOpenIngredient={(id) => {
+                setEditIngredientId(id);
+                setActiveTab('ingredients');
+              }}
+            />
           </TabsContent>
         </Tabs>
       </main>
@@ -418,7 +431,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
 }
 
 // ===== INGRÉDIENTS TAB =====
-function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRefresh: () => void }) {
+function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed }: { ingredients: Ingredient[]; onRefresh: () => void; autoEditId?: string | null; onAutoEditConsumed?: () => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
@@ -514,6 +527,17 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
     });
     setShowDialog(true);
   };
+
+  // Auto-open edit dialog when triggered from another tab (e.g. Stock double-click)
+  useEffect(() => {
+    if (!autoEditId) return;
+    const ing = ingredients.find(i => i.id === autoEditId);
+    if (ing) {
+      openEditIng(ing);
+      onAutoEditConsumed?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoEditId, ingredients]);
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
@@ -1111,7 +1135,7 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
 }
 
 // ===== STOCK TAB =====
-function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRefresh: () => void }) {
+function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: Ingredient[]; onRefresh: () => void; onOpenIngredient?: (id: string) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filtered = ingredients.filter(i =>
@@ -1204,7 +1228,13 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                         const uvcCount = uvcQty > 0 ? qty / uvcQty : 0;
                         return (
                           <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
-                            <TableCell className="font-medium">{ing.name}</TableCell>
+                            <TableCell
+                              className="font-medium cursor-pointer hover:text-primary select-none"
+                              onDoubleClick={() => onOpenIngredient?.(ing.id)}
+                              title="Double-clic pour ouvrir la fiche ingrédient"
+                            >
+                              {ing.name}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                             <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
                             <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
