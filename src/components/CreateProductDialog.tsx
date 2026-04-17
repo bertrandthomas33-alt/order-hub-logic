@@ -22,6 +22,7 @@ export function CreateProductDialog({ categories, open, onOpenChange, onCreated 
   const [description, setDescription] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [price, setPrice] = useState('');
+  const [priceB2c, setPriceB2c] = useState('');
   const [unit, setUnit] = useState('kg');
   const [warehouseId, setWarehouseId] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -51,7 +52,7 @@ export function CreateProductDialog({ categories, open, onOpenChange, onCreated 
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
-      setName(''); setDescription(''); setCostPrice(''); setPrice(''); setUnit('kg');
+      setName(''); setDescription(''); setCostPrice(''); setPrice(''); setPriceB2c(''); setUnit('kg');
       setWarehouseId(''); setCategoryId(''); setActive(true);
       setImageUrl(''); setStock('0');
     }
@@ -68,6 +69,7 @@ export function CreateProductDialog({ categories, open, onOpenChange, onCreated 
       description: description.trim() || null,
       cost_price: Number(costPrice) || 0,
       price: Number(price),
+      price_b2c: Number(priceB2c) || 0,
       unit,
       category_id: categoryId,
       active,
@@ -104,14 +106,18 @@ export function CreateProductDialog({ categories, open, onOpenChange, onCreated 
             <Label>Image</Label>
             <ImageUpload value={imageUrl} onChange={setImageUrl} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="new-cost-price">Prix de revient (€)</Label>
               <Input id="new-cost-price" type="number" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="new-price">Prix de vente (€) *</Label>
+              <Label htmlFor="new-price">Prix BtoB (€) *</Label>
               <Input id="new-price" type="number" step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-price-b2c">Prix BtoC (€)</Label>
+              <Input id="new-price-b2c" type="number" step="0.01" min="0" value={priceB2c} onChange={(e) => setPriceB2c(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

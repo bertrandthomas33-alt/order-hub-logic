@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN price_b2c numeric NOT NULL DEFAULT 0;
