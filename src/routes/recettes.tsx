@@ -459,10 +459,18 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
     });
   }, []);
 
+  const [supplierFilter, setSupplierFilter] = useState<string>('all');
+
   const filtered = ingredients.filter(i => {
     const q = searchTerm.toLowerCase();
-    return i.name.toLowerCase().includes(q) ||
+    const matchSearch = i.name.toLowerCase().includes(q) ||
       (i.supplier_ref?.title || i.supplier || '').toLowerCase().includes(q);
+    const matchSupplier = supplierFilter === 'all'
+      ? true
+      : supplierFilter === 'none'
+        ? !i.supplier_id
+        : i.supplier_id === supplierFilter;
+    return matchSearch && matchSupplier;
   });
 
   const openCreate = () => {
