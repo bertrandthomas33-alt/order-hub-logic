@@ -14,6 +14,10 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Navigate } from '@tanstack/react-router';
@@ -98,6 +102,7 @@ function RecettesPage() {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [activeTab, setActiveTab] = useState('fiches');
   const [editIngredientId, setEditIngredientId] = useState<string | null>(null);
+  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
 
   // Form state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -278,17 +283,25 @@ function RecettesPage() {
     setView('list');
   };
 
+
   const handleDeleteRecipe = async (id: string) => {
-    if (!confirm('Supprimer cette fiche technique ?')) return;
-    await supabase.from('recipes').delete().eq('id', id);
-    toast.success('Recette supprimée');
+    const { error } = await supabase.from('recipes').delete().eq('id', id);
+    if (error) { toast.error('Erreur suppression'); return; }
+    toast.success('Fiche technique supprimée');
+    setRecipeToDelete(null);
     setView('list');
+    setSelectedRecipe(null);
     fetchData();
   };
 
   // ---- Detail / Edit views ----
   if (view === 'detail' && selectedRecipe) {
-    return <RecipeDetailView recipe={selectedRecipe} totalCost={totalCost} onBack={() => { setView('list'); setSelectedRecipe(null); }} onEdit={() => openEdit(selectedRecipe)} onDelete={() => handleDeleteRecipe(selectedRecipe.id)} />;
+    return (
+      <>
+        <RecipeDetailView recipe={selectedRecipe} totalCost={totalCost} onBack={() => { setView('list'); setSelectedRecipe(null); }} onEdit={() => openEdit(selectedRecipe)} onDelete={() => setRecipeToDelete(selectedRecipe)} />
+        <DeleteRecipeDialog recipe={recipeToDelete} onCancel={() => setRecipeToDelete(null)} onConfirm={() => recipeToDelete && handleDeleteRecipe(recipeToDelete.id)} />
+      </>
+    );
   }
 
   if (view === 'edit' && editingRecipe) {
@@ -340,6 +353,7 @@ function RecettesPage() {
               totalCost={totalCost}
               openDetail={openDetail}
               openEdit={openEdit}
+              onDelete={(r) => setRecipeToDelete(r)}
             />
           </TabsContent>
 
@@ -376,12 +390,32 @@ function RecettesPage() {
           </TabsContent>
         </Tabs>
       </main>
+      <DeleteRecipeDialog recipe={recipeToDelete} onCancel={() => setRecipeToDelete(null)} onConfirm={() => recipeToDelete && handleDeleteRecipe(recipeToDelete.id)} />
     </div>
   );
 }
 
+function DeleteRecipeDialog({ recipe, onCancel, onConfirm }: { recipe: Recipe | null; onCancel: () => void; onConfirm: () => void }) {
+  return (
+    <AlertDialog open={!!recipe} onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer la fiche technique ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            La fiche technique de <span className="font-semibold text-foreground">{recipe?.product?.name}</span> sera définitivement supprimée, ainsi que ses ingrédients et étapes. Le produit lui-même ne sera pas supprimé. Cette action est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Supprimer</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 // ===== FICHES TAB =====
-function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit }: {
+function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit, onDelete }: {
   filtered: Recipe[];
   search: string;
   setSearch: (s: string) => void;
@@ -395,6 +429,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
   totalCost: (r: Recipe) => number;
   openDetail: (r: Recipe) => void;
   openEdit: (r: Recipe) => void;
+  onDelete: (r: Recipe) => void;
 }) {
   const [categoryTab, setCategoryTab] = useState<string>('all');
   const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
@@ -476,6 +511,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
                         totalCost={totalCost(recipe)}
                         onView={() => openDetail(recipe)}
                         onEdit={() => openEdit(recipe)}
+                        onDelete={() => onDelete(recipe)}
                       />
                     ))}
                   </div>
@@ -1429,7 +1465,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
 
 // ---- Sub-components ----
 
-function RecipeCard({ recipe, totalCost, onView, onEdit }: { recipe: Recipe; totalCost: number; onView: () => void; onEdit: () => void }) {
+function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: Recipe; totalCost: number; onView: () => void; onEdit: () => void; onDelete: () => void }) {
   const ingredientCount = recipe.recipe_ingredients?.length || 0;
   const stepCount = recipe.recipe_steps?.length || 0;
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
@@ -1464,6 +1500,7 @@ function RecipeCard({ recipe, totalCost, onView, onEdit }: { recipe: Recipe; tot
         <div className="flex gap-1">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}><Eye className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
       </div>
     </div>
