@@ -282,17 +282,26 @@ function RecettesPage() {
     setView('list');
   };
 
+  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
+
   const handleDeleteRecipe = async (id: string) => {
-    if (!confirm('Supprimer cette fiche technique ?')) return;
-    await supabase.from('recipes').delete().eq('id', id);
-    toast.success('Recette supprimée');
+    const { error } = await supabase.from('recipes').delete().eq('id', id);
+    if (error) { toast.error('Erreur suppression'); return; }
+    toast.success('Fiche technique supprimée');
+    setRecipeToDelete(null);
     setView('list');
+    setSelectedRecipe(null);
     fetchData();
   };
 
   // ---- Detail / Edit views ----
   if (view === 'detail' && selectedRecipe) {
-    return <RecipeDetailView recipe={selectedRecipe} totalCost={totalCost} onBack={() => { setView('list'); setSelectedRecipe(null); }} onEdit={() => openEdit(selectedRecipe)} onDelete={() => handleDeleteRecipe(selectedRecipe.id)} />;
+    return (
+      <>
+        <RecipeDetailView recipe={selectedRecipe} totalCost={totalCost} onBack={() => { setView('list'); setSelectedRecipe(null); }} onEdit={() => openEdit(selectedRecipe)} onDelete={() => setRecipeToDelete(selectedRecipe)} />
+        <DeleteRecipeDialog recipe={recipeToDelete} onCancel={() => setRecipeToDelete(null)} onConfirm={() => recipeToDelete && handleDeleteRecipe(recipeToDelete.id)} />
+      </>
+    );
   }
 
   if (view === 'edit' && editingRecipe) {
