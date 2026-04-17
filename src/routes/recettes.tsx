@@ -298,7 +298,12 @@ function RecettesPage() {
 
           {/* ===== INGRÉDIENTS ===== */}
           <TabsContent value="ingredients">
-            <IngredientsTab ingredients={ingredients} onRefresh={fetchData} />
+            <IngredientsTab
+              ingredients={ingredients}
+              onRefresh={fetchData}
+              autoEditId={editIngredientId}
+              onAutoEditConsumed={() => setEditIngredientId(null)}
+            />
           </TabsContent>
 
           {/* ===== FOURNISSEURS ===== */}
@@ -313,7 +318,14 @@ function RecettesPage() {
 
           {/* ===== STOCK ===== */}
           <TabsContent value="stock">
-            <StockTab ingredients={ingredients} onRefresh={fetchData} />
+            <StockTab
+              ingredients={ingredients}
+              onRefresh={fetchData}
+              onOpenIngredient={(id) => {
+                setEditIngredientId(id);
+                setActiveTab('ingredients');
+              }}
+            />
           </TabsContent>
         </Tabs>
       </main>
