@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, DollarSign, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1088,7 +1088,7 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
         <>
           <div className="mb-6 rounded-xl border border-border bg-card p-4 flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <Euro className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Coût total estimé (1 batch par recette)</p>
@@ -1338,7 +1338,7 @@ function RecipeCard({ recipe, totalCost, onView, onEdit }: { recipe: Recipe; tot
       </div>
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-1 text-sm">
-          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+          <Euro className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-medium text-foreground">{totalCost.toFixed(2)} €</span>
           <span className="text-muted-foreground">/ {recipe.yield_quantity} {recipe.yield_unit}</span>
         </div>
