@@ -383,26 +383,44 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           acc[catName].push(recipe);
           return acc;
         }, {});
-        const sortedCategories = Object.keys(grouped).sort((a, b) => a === 'Sans catégorie' ? 1 : b === 'Sans catégorie' ? -1 : a.localeCompare(b));
+        const sortedCategories = Object.keys(grouped).sort((a, b) =>
+          a === 'Sans catégorie' ? 1 : b === 'Sans catégorie' ? -1 : a.localeCompare(b)
+        );
+        const activeCat = categoryTab !== 'all' && grouped[categoryTab] ? categoryTab : 'all';
+        const visibleCategories = activeCat === 'all' ? sortedCategories : [activeCat];
         return (
-          <div className="space-y-8">
-            {sortedCategories.map(catName => (
-              <section key={catName}>
-                <h3 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h3>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {grouped[catName].map(recipe => (
-                    <RecipeCard
-                      key={recipe.id}
-                      recipe={recipe}
-                      totalCost={totalCost(recipe)}
-                      onView={() => openDetail(recipe)}
-                      onEdit={() => openEdit(recipe)}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+          <>
+            <Tabs value={activeCat} onValueChange={setCategoryTab} className="mb-6">
+              <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto">
+                <TabsTrigger value="all">Toutes ({filtered.length})</TabsTrigger>
+                {sortedCategories.map(cat => (
+                  <TabsTrigger key={cat} value={cat}>
+                    {cat} ({grouped[cat].length})
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <div className="space-y-8">
+              {visibleCategories.map(catName => (
+                <section key={catName}>
+                  {activeCat === 'all' && (
+                    <h3 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h3>
+                  )}
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {grouped[catName].map(recipe => (
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        totalCost={totalCost(recipe)}
+                        onView={() => openDetail(recipe)}
+                        onEdit={() => openEdit(recipe)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </>
         );
       })()}
 
