@@ -103,82 +103,78 @@ function CataloguePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {/* Title + Warehouse tabs + Search */}
-        <div className="mb-2 flex flex-wrap items-center gap-4">
-          <div>
-            <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
-            <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6 sm:px-6">
+        {/* Title + Toggle (mobile compact) */}
+        <div className="mb-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Catalogue</h1>
+            <p className="mt-1 hidden sm:block text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <Button
-              onClick={() => {
-                setViewMode(viewMode === 'grid' ? 'table' : 'grid');
-                if (viewMode === 'table') setQuantities({});
-              }}
-              variant={viewMode === 'table' ? 'default' : 'outline'}
-              className="gap-2"
-            >
-              {viewMode === 'grid' ? <Zap className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
-              {viewMode === 'grid' ? 'Commande rapide' : 'Vue catalogue'}
-            </Button>
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Rechercher un produit..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
+          <Button
+            onClick={() => {
+              setViewMode(viewMode === 'grid' ? 'table' : 'grid');
+              if (viewMode === 'table') setQuantities({});
+            }}
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
+            className="gap-2 shrink-0"
+          >
+            {viewMode === 'grid' ? <Zap className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+            <span className="hidden sm:inline">{viewMode === 'grid' ? 'Commande rapide' : 'Vue catalogue'}</span>
+          </Button>
+        </div>
+
+        {/* Search full-width */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher un produit..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
 
         {/* Warehouse tabs */}
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-3">
-          <button
-            onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              activeWarehouse === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
-          >
-            Tous les entrepôts
-          </button>
-          {warehouses.map((wh) => (
+        <div className="mb-4 -mx-4 sm:mx-0 overflow-x-auto scrollbar-none border-b border-border">
+          <div className="flex w-max gap-2 px-4 sm:px-0 pb-3">
             <button
-              key={wh.id}
-              onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                activeWarehouse === wh.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+              onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                activeWarehouse === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
               }`}
             >
-              {wh.name}
+              Tous les entrepôts
             </button>
-          ))}
+            {warehouses.map((wh) => (
+              <button
+                key={wh.id}
+                onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeWarehouse === wh.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {wh.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Mobile category filters (above products) */}
-        <div className="mb-4 flex flex-wrap gap-1.5 md:hidden">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
+        {/* Mobile category filter — native select for compactness */}
+        <div className="mb-4 md:hidden">
+          <select
+            value={activeCategory ?? ''}
+            onChange={(e) => setActiveCategory(e.target.value || null)}
+            className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            Tout
-          </button>
-          {filteredCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-              }`}
-            >
-              {cat.icon} {cat.name}
-            </button>
-          ))}
+            <option value="">Toutes les catégories ({filteredCategories.length})</option>
+            {filteredCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex gap-6">
@@ -216,7 +212,7 @@ function CataloguePage() {
                   <p className="text-lg font-medium text-muted-foreground">Aucun produit trouvé</p>
                 </div>
               ) : (
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 grid-cols-2 sm:gap-5 lg:grid-cols-3">
                   {filteredProducts.map((product) => (
                     <ProductCard
                       key={product.id}

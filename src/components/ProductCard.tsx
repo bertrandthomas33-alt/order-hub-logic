@@ -9,7 +9,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:shadow-lg hover:shadow-primary/5">
-      <div className="relative aspect-[2/1] overflow-hidden bg-muted">
+      <div className="relative aspect-square sm:aspect-[2/1] overflow-hidden bg-muted">
         {product.image ? (
           <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
         ) : (
