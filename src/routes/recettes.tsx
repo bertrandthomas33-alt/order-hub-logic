@@ -327,15 +327,17 @@ function RecettesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 overflow-x-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6 w-full justify-start gap-1">
-            <TabsTrigger value="fiches" className="gap-2"><ChefHat className="h-4 w-4" />Fiches Techniques</TabsTrigger>
-            <TabsTrigger value="ingredients" className="gap-2"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
-            <TabsTrigger value="fournisseurs" className="gap-2"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
-            <TabsTrigger value="commandes" className="gap-2"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
-            <TabsTrigger value="stock" className="gap-2"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
-          </TabsList>
+          <div className="-mx-4 sm:mx-0 mb-6 overflow-x-auto scrollbar-none">
+            <TabsList className="inline-flex w-max justify-start gap-1 mx-4 sm:mx-0">
+              <TabsTrigger value="fiches" className="gap-2 whitespace-nowrap"><ChefHat className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Fiches Techniques</span><span className="xs:hidden sm:hidden">Fiches</span></TabsTrigger>
+              <TabsTrigger value="ingredients" className="gap-2 whitespace-nowrap"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
+              <TabsTrigger value="fournisseurs" className="gap-2 whitespace-nowrap"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
+              <TabsTrigger value="commandes" className="gap-2 whitespace-nowrap"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
+              <TabsTrigger value="stock" className="gap-2 whitespace-nowrap"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ===== FICHES TECHNIQUES ===== */}
           <TabsContent value="fiches">
