@@ -620,7 +620,10 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-muted-foreground">Unité de gestion</label>
-                <Select value={form.unit} onValueChange={v => setForm({ ...form, unit: v })}>
+                <Select value={form.unit} onValueChange={v => {
+                  const newSub = v === 'kg' ? 'kg' : v === 'litre' ? 'litre' : 'unite';
+                  setForm({ ...form, unit: v, uvc_piece_unit: newSub });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="kg">kg</SelectItem>
