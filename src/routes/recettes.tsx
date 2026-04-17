@@ -1532,7 +1532,7 @@ function RecipeEditView({
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Image</label>
-            <ImageUpload value={recipe.image_url || ''} onChange={url => setRecipe({ ...recipe, image_url: url })} />
+            <ImageUpload value={recipe.image_url || ''} onChange={(url: string) => setRecipe({ ...recipe, image_url: url })} />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Notes</label>
