@@ -381,20 +381,36 @@ function RecettesPage() {
 }
 
 // ===== FICHES TAB =====
-function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, showCreateDialog, setShowCreateDialog, handleCreateRecipe, totalCost, openDetail, openEdit }: {
+function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit }: {
   filtered: Recipe[];
   search: string;
   setSearch: (s: string) => void;
   loading: boolean;
   productsWithoutRecipe: any[];
+  categories: { id: string; name: string }[];
   showCreateDialog: boolean;
   setShowCreateDialog: (v: boolean) => void;
   handleCreateRecipe: (id: string) => void;
+  handleCreateNewProductRecipe: (payload: { name: string; category_id: string; price_b2c: number }) => void;
   totalCost: (r: Recipe) => number;
   openDetail: (r: Recipe) => void;
   openEdit: (r: Recipe) => void;
 }) {
   const [categoryTab, setCategoryTab] = useState<string>('all');
+  const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
+  const [newName, setNewName] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [newPriceB2c, setNewPriceB2c] = useState('');
+
+  useEffect(() => {
+    if (showCreateDialog) {
+      setCreateMode('new');
+      setNewName('');
+      setNewCategory('');
+      setNewPriceB2c('');
+    }
+  }, [showCreateDialog]);
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -402,7 +418,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           <h2 className="font-heading text-xl font-bold text-foreground">Fiches Techniques</h2>
           <p className="text-sm text-muted-foreground">Recettes et coûts de revient de vos produits finis</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2" disabled={productsWithoutRecipe.length === 0}>
+        <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
           <Plus className="h-4 w-4" />Nouvelle fiche
         </Button>
       </div>
