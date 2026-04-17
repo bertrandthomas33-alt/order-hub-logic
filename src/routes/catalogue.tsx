@@ -137,49 +137,44 @@ function CataloguePage() {
         </div>
 
         {/* Warehouse tabs */}
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-3">
-          <button
-            onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-              activeWarehouse === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
-          >
-            Tous les entrepôts
-          </button>
-          {warehouses.map((wh) => (
+        <div className="mb-4 -mx-4 sm:mx-0 overflow-x-auto scrollbar-none border-b border-border">
+          <div className="flex w-max gap-2 px-4 sm:px-0 pb-3">
             <button
-              key={wh.id}
-              onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                activeWarehouse === wh.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+              onClick={() => { setActiveWarehouse('all'); setActiveCategory(null); }}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                activeWarehouse === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
               }`}
             >
-              {wh.name}
+              Tous les entrepôts
             </button>
-          ))}
+            {warehouses.map((wh) => (
+              <button
+                key={wh.id}
+                onClick={() => { setActiveWarehouse(wh.id); setActiveCategory(null); }}
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  activeWarehouse === wh.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {wh.name}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Mobile category filters (above products) */}
-        <div className="mb-4 flex flex-wrap gap-1.5 md:hidden">
-          <button
-            onClick={() => setActiveCategory(null)}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-              !activeCategory ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-            }`}
+        {/* Mobile category filter — native select for compactness */}
+        <div className="mb-4 md:hidden">
+          <select
+            value={activeCategory ?? ''}
+            onChange={(e) => setActiveCategory(e.target.value || null)}
+            className="w-full rounded-xl border border-input bg-card px-3 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            Tout
-          </button>
-          {filteredCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeCategory === cat.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-              }`}
-            >
-              {cat.icon} {cat.name}
-            </button>
-          ))}
+            <option value="">Toutes les catégories ({filteredCategories.length})</option>
+            {filteredCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex gap-6">
