@@ -181,6 +181,32 @@ function RecettesPage() {
     if (data) openEdit(data as any);
   };
 
+  const handleCreateNewProductRecipe = async (payload: { name: string; category_id: string; price_b2c: number }) => {
+    const { data: product, error: prodErr } = await supabase.from('products').insert({
+      name: payload.name,
+      category_id: payload.category_id,
+      price_b2c: payload.price_b2c,
+      price: 0,
+      cost_price: 0,
+      stock: 0,
+      unit: 'portion',
+      active: true,
+    }).select('id, name, image_url, unit, category_id, categories(name)').single();
+    if (prodErr || !product) { toast.error('Erreur création produit'); console.error(prodErr); return; }
+
+    const { data: recipe, error: recErr } = await supabase.from('recipes').insert({
+      product_id: product.id,
+      yield_quantity: 1,
+      yield_unit: 'portion',
+    }).select('*, product:products(name, image_url, unit, category_id, categories(name))').single();
+    if (recErr) { toast.error('Erreur création recette'); console.error(recErr); return; }
+
+    toast.success('Fiche technique créée');
+    setShowCreateDialog(false);
+    await fetchData();
+    if (recipe) openEdit(recipe as any);
+  };
+
   const openDetail = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
     setView('detail');
