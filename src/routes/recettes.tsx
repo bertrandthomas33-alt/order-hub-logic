@@ -459,10 +459,18 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
     });
   }, []);
 
+  const [supplierFilter, setSupplierFilter] = useState<string>('all');
+
   const filtered = ingredients.filter(i => {
     const q = searchTerm.toLowerCase();
-    return i.name.toLowerCase().includes(q) ||
+    const matchSearch = i.name.toLowerCase().includes(q) ||
       (i.supplier_ref?.title || i.supplier || '').toLowerCase().includes(q);
+    const matchSupplier = supplierFilter === 'all'
+      ? true
+      : supplierFilter === 'none'
+        ? !i.supplier_id
+        : i.supplier_id === supplierFilter;
+    return matchSearch && matchSupplier;
   });
 
   const openCreate = () => {
@@ -557,9 +565,21 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
         <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" />Nouvel ingrédient</Button>
       </div>
 
-      <div className="relative mb-6 max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={supplierFilter} onValueChange={setSupplierFilter}>
+          <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Filtrer par fournisseur" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les fournisseurs</SelectItem>
+            <SelectItem value="none">— Sans fournisseur —</SelectItem>
+            {suppliers.map(s => (
+              <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
@@ -574,6 +594,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
               <TableRow>
                 <TableHead>Nom</TableHead>
                 <TableHead>Unité</TableHead>
+                <TableHead>UVC</TableHead>
                 <TableHead className="text-right">Coût / unité</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Fournisseur</TableHead>
@@ -586,6 +607,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                 <TableRow key={ing.id}>
                   <TableCell className="font-medium">{ing.name}</TableCell>
                   <TableCell>{ing.unit}</TableCell>
+                  <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                   <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
                   <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
                   <TableCell className="text-muted-foreground">{ing.supplier_ref?.title || ing.supplier || '—'}</TableCell>
