@@ -516,7 +516,6 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                 <TableHead>Unité</TableHead>
                 <TableHead className="text-right">Coût / unité</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
-                <TableHead>UVC</TableHead>
                 <TableHead>Fournisseur</TableHead>
                 <TableHead className="text-right">Statut</TableHead>
                 <TableHead className="w-20"></TableHead>
@@ -529,7 +528,6 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                   <TableCell>{ing.unit}</TableCell>
                   <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
                   <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
-                  <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                   <TableCell className="text-muted-foreground">{ing.supplier_ref?.title || ing.supplier || '—'}</TableCell>
                   <TableCell className="text-right">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
