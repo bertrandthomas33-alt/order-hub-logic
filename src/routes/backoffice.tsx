@@ -501,7 +501,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
                     {product.categories?.warehouses?.name || '—'}
                   </TableCell>
                   <TableCell className="text-right font-medium">{Number(product.cost_price ?? 0).toFixed(2)} €</TableCell>
-                  <TableCell className="text-right">{Number(product.stock ?? 0)} {product.unit}</TableCell>
+                  <TableCell className="text-right">{Number(product.stock ?? 0)}</TableCell>
                   <TableCell>
                     <Switch checked={product.active} onCheckedChange={(checked) => toggleActive(product.id, checked)} />
                   </TableCell>
