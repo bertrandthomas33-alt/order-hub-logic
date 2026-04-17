@@ -39,8 +39,12 @@ type Ingredient = {
   unit: string;
   cost_per_unit: number;
   supplier: string | null;
+  supplier_id: string | null;
+  supplier_ref?: { id: string; title: string } | null;
   active: boolean;
 };
+
+type SupplierOption = { id: string; title: string };
 
 type Recipe = {
   id: string;
