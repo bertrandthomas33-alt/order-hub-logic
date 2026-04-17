@@ -134,6 +134,7 @@ export type Database = {
           supplier_id: string | null
           unit: string
           updated_at: string
+          uvc: string | null
         }
         Insert: {
           active?: boolean
@@ -147,6 +148,7 @@ export type Database = {
           supplier_id?: string | null
           unit?: string
           updated_at?: string
+          uvc?: string | null
         }
         Update: {
           active?: boolean
@@ -160,6 +162,7 @@ export type Database = {
           supplier_id?: string | null
           unit?: string
           updated_at?: string
+          uvc?: string | null
         }
         Relationships: [
           {
