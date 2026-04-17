@@ -135,6 +135,7 @@ export type Database = {
           unit: string
           updated_at: string
           uvc: string | null
+          uvc_quantity: number
         }
         Insert: {
           active?: boolean
@@ -149,6 +150,7 @@ export type Database = {
           unit?: string
           updated_at?: string
           uvc?: string | null
+          uvc_quantity?: number
         }
         Update: {
           active?: boolean
@@ -163,6 +165,7 @@ export type Database = {
           unit?: string
           updated_at?: string
           uvc?: string | null
+          uvc_quantity?: number
         }
         Relationships: [
           {
