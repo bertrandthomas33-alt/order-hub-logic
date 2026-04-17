@@ -491,20 +491,80 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           <DialogHeader>
             <DialogTitle>Nouvelle fiche technique</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground mb-4">Sélectionnez le produit fini :</p>
-          <div className="max-h-64 overflow-y-auto space-y-1">
-            {productsWithoutRecipe.map(p => (
-              <button
-                key={p.id}
-                onClick={() => handleCreateRecipe(p.id)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
-              >
-                {p.image_url && <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
-                <span className="font-medium">{p.name}</span>
-                <span className="ml-auto text-xs text-muted-foreground">{(p as any).categories?.name}</span>
-              </button>
-            ))}
-          </div>
+
+          <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as 'new' | 'existing')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new">Nouveau produit</TabsTrigger>
+              <TabsTrigger value="existing" disabled={productsWithoutRecipe.length === 0}>
+                Produit existant ({productsWithoutRecipe.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="new" className="space-y-4 pt-4">
+              <div>
+                <label className="text-xs text-muted-foreground">Nom du plat</label>
+                <Input
+                  placeholder="Ex : Salade César"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Catégorie</label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Prix B2C (€)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newPriceB2c}
+                  onChange={(e) => setNewPriceB2c(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
+                <Button
+                  onClick={() => {
+                    if (!newName.trim()) { toast.error('Nom requis'); return; }
+                    if (!newCategory) { toast.error('Catégorie requise'); return; }
+                    handleCreateNewProductRecipe({
+                      name: newName.trim(),
+                      category_id: newCategory,
+                      price_b2c: parseFloat(newPriceB2c) || 0,
+                    });
+                  }}
+                >
+                  Créer la fiche
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="existing" className="pt-4">
+              <p className="text-sm text-muted-foreground mb-3">Sélectionnez le produit fini :</p>
+              <div className="max-h-64 overflow-y-auto space-y-1">
+                {productsWithoutRecipe.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleCreateRecipe(p.id)}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
+                  >
+                    {p.image_url && <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
+                    <span className="font-medium">{p.name}</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{(p as any).categories?.name}</span>
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
