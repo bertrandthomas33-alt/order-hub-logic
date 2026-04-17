@@ -431,7 +431,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
 }
 
 // ===== INGRÉDIENTS TAB =====
-function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRefresh: () => void }) {
+function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed }: { ingredients: Ingredient[]; onRefresh: () => void; autoEditId?: string | null; onAutoEditConsumed?: () => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
