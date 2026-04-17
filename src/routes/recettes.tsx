@@ -1228,7 +1228,13 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                         const uvcCount = uvcQty > 0 ? qty / uvcQty : 0;
                         return (
                           <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
-                            <TableCell className="font-medium">{ing.name}</TableCell>
+                            <TableCell
+                              className="font-medium cursor-pointer hover:text-primary select-none"
+                              onDoubleClick={() => onOpenIngredient?.(ing.id)}
+                              title="Double-clic pour ouvrir la fiche ingrédient"
+                            >
+                              {ing.name}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                             <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
                             <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
