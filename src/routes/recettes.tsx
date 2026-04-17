@@ -1188,6 +1188,7 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                     <TableHeader>
                       <TableRow>
                         <TableHead>Ingrédient</TableHead>
+                        <TableHead>UVC</TableHead>
                         <TableHead className="text-right">En stock</TableHead>
                         <TableHead className="text-right">Seuil min</TableHead>
                         <TableHead className="text-right">Statut</TableHead>
@@ -1202,6 +1203,7 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                         return (
                           <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
                             <TableCell className="font-medium">{ing.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                             <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
                             <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
                             <TableCell className="text-right">
