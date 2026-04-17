@@ -1,0 +1,1 @@
+ALTER TABLE public.ingredients ADD COLUMN IF NOT EXISTS uvc_quantity numeric NOT NULL DEFAULT 1;
