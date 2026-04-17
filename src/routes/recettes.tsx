@@ -1192,14 +1192,16 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                         <TableHead className="text-right">En stock</TableHead>
                         <TableHead className="text-right">Seuil min</TableHead>
                         <TableHead className="text-right">Statut</TableHead>
-                        <TableHead className="w-32"></TableHead>
+                        <TableHead className="w-56 text-right">Mise à jour</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {grouped[supplierName].map(ing => {
-                        const qty = (ing as any).stock_quantity ?? 0;
+                        const qty = Number((ing as any).stock_quantity ?? 0);
                         const min = (ing as any).stock_min ?? 0;
                         const isLow = min > 0 && qty <= min;
+                        const uvcQty = Number(ing.uvc_quantity) || 0;
+                        const uvcCount = uvcQty > 0 ? qty / uvcQty : 0;
                         return (
                           <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
                             <TableCell className="font-medium">{ing.name}</TableCell>
@@ -1212,12 +1214,32 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                               </span>
                             </TableCell>
                             <TableCell>
-                              <Input
-                                type="number"
-                                className="h-8 w-24 ml-auto"
-                                value={qty}
-                                onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
-                              />
+                              <div className="flex items-center justify-end gap-1">
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-muted-foreground leading-none mb-0.5">UVC</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    disabled={uvcQty <= 0}
+                                    className="h-8 w-20"
+                                    value={uvcQty > 0 ? Number(uvcCount.toFixed(3)) : ''}
+                                    onChange={e => {
+                                      const v = parseFloat(e.target.value) || 0;
+                                      handleUpdateStock(ing.id, v * uvcQty);
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-muted-foreground leading-none mb-0.5">{ing.unit}</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="h-8 w-24"
+                                    value={qty}
+                                    onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
+                                  />
+                                </div>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
