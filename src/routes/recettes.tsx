@@ -164,10 +164,12 @@ function RecettesPage() {
   };
 
   const handleCreateRecipe = async (productId: string) => {
+    const product = products.find(p => p.id === productId);
     const { data, error } = await supabase.from('recipes').insert({
       product_id: productId,
       yield_quantity: 1,
       yield_unit: 'portion',
+      image_url: product?.image_url || null,
     }).select('*, product:products(name, image_url, unit)').single();
     if (error) { toast.error('Erreur création recette'); return; }
     toast.success('Recette créée');
@@ -1532,7 +1534,7 @@ function RecipeEditView({
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Image</label>
-            <ImageUpload value={recipe.image_url || ''} onChange={(url: string) => setRecipe({ ...recipe, image_url: url })} />
+            <ImageUpload value={recipe.image_url || recipe.product?.image_url || ''} onChange={(url: string) => setRecipe({ ...recipe, image_url: url })} />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Notes</label>
