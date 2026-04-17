@@ -1552,36 +1552,53 @@ function RecipeEditView({
           </div>
           {recipeIngredients.length > 0 ? (
             <div className="space-y-2">
-              {recipeIngredients.map((ri, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <Select value={ri.ingredient_id} onValueChange={v => {
-                    const updated = [...recipeIngredients];
-                    const ing = allIngredients.find(i => i.id === v);
-                    updated[idx] = { ...updated[idx], ingredient_id: v, unit: ing?.unit || ri.unit };
-                    setRecipeIngredients(updated);
-                  }}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
-                    <SelectContent>
-                      {allIngredients.map(i => (
-                        <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input type="number" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
-                    const updated = [...recipeIngredients];
-                    updated[idx] = { ...updated[idx], quantity: parseFloat(e.target.value) || 0 };
-                    setRecipeIngredients(updated);
-                  }} />
-                  <Input className="w-20" value={ri.unit} onChange={e => {
-                    const updated = [...recipeIngredients];
-                    updated[idx] = { ...updated[idx], unit: e.target.value };
-                    setRecipeIngredients(updated);
-                  }} />
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveIngredientRow(idx)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+              {recipeIngredients.map((ri, idx) => {
+                const ing = allIngredients.find(i => i.id === ri.ingredient_id);
+                const cost = (ing?.cost_per_unit || 0) * (ri.quantity || 0);
+                return (
+                  <div key={idx} className="flex items-center gap-2">
+                    <Select value={ri.ingredient_id} onValueChange={v => {
+                      const updated = [...recipeIngredients];
+                      const newIng = allIngredients.find(i => i.id === v);
+                      updated[idx] = { ...updated[idx], ingredient_id: v, unit: newIng?.unit || ri.unit };
+                      setRecipeIngredients(updated);
+                    }}>
+                      <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
+                      <SelectContent>
+                        {allIngredients.map(i => (
+                          <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input type="number" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
+                      const updated = [...recipeIngredients];
+                      updated[idx] = { ...updated[idx], quantity: parseFloat(e.target.value) || 0 };
+                      setRecipeIngredients(updated);
+                    }} />
+                    <Input className="w-20" value={ri.unit} onChange={e => {
+                      const updated = [...recipeIngredients];
+                      updated[idx] = { ...updated[idx], unit: e.target.value };
+                      setRecipeIngredients(updated);
+                    }} />
+                    <div className="w-24 text-right text-sm font-medium tabular-nums text-foreground">
+                      {cost.toFixed(2)} €
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveIngredientRow(idx)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-end gap-2 border-t border-border pt-3 mt-2 text-sm font-semibold">
+                <span className="text-muted-foreground">Coût total :</span>
+                <span className="w-24 text-right tabular-nums">
+                  {recipeIngredients.reduce((sum, ri) => {
+                    const ing = allIngredients.find(i => i.id === ri.ingredient_id);
+                    return sum + (ing?.cost_per_unit || 0) * (ri.quantity || 0);
+                  }, 0).toFixed(2)} €
+                </span>
+                <span className="w-8" />
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Aucun ingrédient — cliquez "Ajouter"</p>
