@@ -538,6 +538,8 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoEditId, ingredients]);
+
+  const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
     const uvcQty = computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit) || 1;
     const costPerUnit = parseFloat(form.cost_per_unit) || 0;
