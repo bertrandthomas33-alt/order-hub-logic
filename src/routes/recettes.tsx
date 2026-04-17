@@ -1338,7 +1338,7 @@ function RecipeCard({ recipe, totalCost, onView, onEdit }: { recipe: Recipe; tot
       </div>
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
         <div className="flex items-center gap-1 text-sm">
-          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+          <Euro className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-medium text-foreground">{totalCost.toFixed(2)} €</span>
           <span className="text-muted-foreground">/ {recipe.yield_quantity} {recipe.yield_unit}</span>
         </div>
