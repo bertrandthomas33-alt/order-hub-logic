@@ -1,0 +1,1 @@
+ALTER TABLE public.ingredients ADD COLUMN uvc text;
