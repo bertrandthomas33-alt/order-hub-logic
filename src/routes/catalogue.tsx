@@ -103,36 +103,37 @@ function CataloguePage() {
   return (
     <div className="min-h-screen">
       <Header />
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {/* Title + Warehouse tabs + Search */}
-        <div className="mb-2 flex flex-wrap items-center gap-4">
-          <div>
-            <h1 className="font-heading text-3xl font-extrabold text-foreground">Catalogue</h1>
-            <p className="mt-1 text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6 sm:px-6">
+        {/* Title + Toggle (mobile compact) */}
+        <div className="mb-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Catalogue</h1>
+            <p className="mt-1 hidden sm:block text-muted-foreground">Sélectionnez vos produits et ajoutez-les au panier</p>
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <Button
-              onClick={() => {
-                setViewMode(viewMode === 'grid' ? 'table' : 'grid');
-                if (viewMode === 'table') setQuantities({});
-              }}
-              variant={viewMode === 'table' ? 'default' : 'outline'}
-              className="gap-2"
-            >
-              {viewMode === 'grid' ? <Zap className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
-              {viewMode === 'grid' ? 'Commande rapide' : 'Vue catalogue'}
-            </Button>
-            <div className="relative w-full max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Rechercher un produit..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
+          <Button
+            onClick={() => {
+              setViewMode(viewMode === 'grid' ? 'table' : 'grid');
+              if (viewMode === 'table') setQuantities({});
+            }}
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
+            className="gap-2 shrink-0"
+          >
+            {viewMode === 'grid' ? <Zap className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+            <span className="hidden sm:inline">{viewMode === 'grid' ? 'Commande rapide' : 'Vue catalogue'}</span>
+          </Button>
+        </div>
+
+        {/* Search full-width */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher un produit..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-input bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
 
         {/* Warehouse tabs */}
