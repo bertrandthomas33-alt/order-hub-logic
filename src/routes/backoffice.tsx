@@ -500,9 +500,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
                   <TableCell className="text-xs text-muted-foreground">
                     {product.categories?.warehouses?.name || '—'}
                   </TableCell>
-                  <TableCell className="text-right text-muted-foreground">{Number(product.cost_price ?? 0).toFixed(2)} €</TableCell>
-                  <TableCell className="text-right font-medium">{Number(product.price).toFixed(2)} €</TableCell>
-                  <TableCell className="text-right">{Number(product.price_b2c ?? 0).toFixed(2)} €</TableCell>
+                  <TableCell className="text-right font-medium">{Number(product.cost_price ?? 0).toFixed(2)} €</TableCell>
                   <TableCell className="text-right">{Number(product.stock ?? 0)} {product.unit}</TableCell>
                   <TableCell>
                     <Switch checked={product.active} onCheckedChange={(checked) => toggleActive(product.id, checked)} />
