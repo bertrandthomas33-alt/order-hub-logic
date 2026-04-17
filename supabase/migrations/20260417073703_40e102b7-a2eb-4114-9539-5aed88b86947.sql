@@ -1,0 +1,1 @@
+UPDATE public.products SET active = false WHERE category_id IN (SELECT id FROM public.categories WHERE name ILIKE 'soupe%');
