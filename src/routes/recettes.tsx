@@ -422,8 +422,36 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_quantity: '1', uvc_price: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+
+  // Conversion factor: how many "unit" are in 1 "subUnit"
+  // unit ∈ {kg, litre, unite}, subUnit ∈ {kg, g, litre, ml, unite}
+  const conversionFactor = (unit: string, subUnit: string): number => {
+    if (unit === 'kg') {
+      if (subUnit === 'kg') return 1;
+      if (subUnit === 'g') return 0.001;
+    }
+    if (unit === 'litre') {
+      if (subUnit === 'litre') return 1;
+      if (subUnit === 'ml') return 0.001;
+    }
+    if (unit === 'unite' && subUnit === 'unite') return 1;
+    return 1;
+  };
+
+  const subUnitOptions = (unit: string): string[] => {
+    if (unit === 'kg') return ['kg', 'g'];
+    if (unit === 'litre') return ['litre', 'ml'];
+    return ['unite'];
+  };
+
+  // Total quantity in management unit
+  const computeUvcTotalQty = (pieces: string, pieceQty: string, unit: string, subUnit: string): number => {
+    const p = parseFloat(pieces) || 0;
+    const q = parseFloat(pieceQty) || 0;
+    return p * q * conversionFactor(unit, subUnit);
+  };
 
   useEffect(() => {
     supabase.from('suppliers').select('id, title').eq('active', true).order('title').then(({ data }) => {
@@ -439,21 +467,41 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_quantity: '1', uvc_price: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
     setShowDialog(true);
+  };
+
+  // Try to parse stored uvc label like "12x500 g" or "5 kg" → pieces & per-piece qty
+  const parseUvcLabel = (label: string | null, unit: string, totalQty: number): { pieces: string; pieceQty: string; pieceUnit: string } => {
+    const defaultSub = unit === 'kg' ? 'kg' : unit === 'litre' ? 'litre' : 'unite';
+    if (label) {
+      const m = label.match(/^\s*(\d+(?:[.,]\d+)?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)\s*([a-zA-Zé]+)?/);
+      if (m) {
+        const pieces = m[1].replace(',', '.');
+        const qty = m[2].replace(',', '.');
+        const sub = (m[3] || defaultSub).toLowerCase();
+        const allowed = unit === 'kg' ? ['kg', 'g'] : unit === 'litre' ? ['litre', 'ml', 'l'] : ['unite', 'u'];
+        const normalized = sub === 'l' ? 'litre' : sub === 'u' ? 'unite' : sub;
+        return { pieces, pieceQty: qty, pieceUnit: allowed.includes(normalized) ? normalized : defaultSub };
+      }
+    }
+    return { pieces: '1', pieceQty: String(totalQty || 1), pieceUnit: defaultSub };
   };
 
   const openEditIng = (ing: Ingredient) => {
     setEditing(ing);
     const uvcQty = Number(ing.uvc_quantity) || 1;
     const cost = Number(ing.cost_per_unit) || 0;
+    const parsed = parseUvcLabel(ing.uvc, ing.unit, uvcQty);
     setForm({
       name: ing.name,
       unit: ing.unit,
       cost_per_unit: String(cost || ''),
       supplier_id: ing.supplier_id || '',
       stock_quantity: String(ing.stock_quantity ?? ''),
-      uvc_quantity: String(uvcQty),
+      uvc_pieces: parsed.pieces,
+      uvc_piece_qty: parsed.pieceQty,
+      uvc_piece_unit: parsed.pieceUnit,
       uvc_price: cost ? (cost * uvcQty).toFixed(2) : '',
     });
     setShowDialog(true);
@@ -461,8 +509,13 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast.error('Nom requis'); return; }
-    const uvcQty = parseFloat(form.uvc_quantity) || 1;
+    const uvcQty = computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit) || 1;
     const costPerUnit = parseFloat(form.cost_per_unit) || 0;
+    const pieces = parseFloat(form.uvc_pieces) || 1;
+    const pieceQty = parseFloat(form.uvc_piece_qty) || 0;
+    const uvcLabel = pieces > 1
+      ? `${pieces}x${pieceQty} ${form.uvc_piece_unit}`
+      : `${pieceQty} ${form.uvc_piece_unit}`;
     const payload = {
       name: form.name.trim(),
       unit: form.unit,
@@ -470,7 +523,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
       supplier_id: form.supplier_id || null,
       stock_quantity: parseFloat(form.stock_quantity) || 0,
       uvc_quantity: uvcQty,
-      uvc: `${uvcQty} ${form.unit}`,
+      uvc: uvcLabel,
     };
 
     if (editing) {
@@ -567,7 +620,10 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-muted-foreground">Unité de gestion</label>
-                <Select value={form.unit} onValueChange={v => setForm({ ...form, unit: v })}>
+                <Select value={form.unit} onValueChange={v => {
+                  const newSub = v === 'kg' ? 'kg' : v === 'litre' ? 'litre' : 'unite';
+                  setForm({ ...form, unit: v, uvc_piece_unit: newSub });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="kg">kg</SelectItem>
@@ -582,26 +638,74 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
               </div>
             </div>
             <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prix — modifier l'un recalcule l'autre</p>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Conditionnement UVC</p>
+              <div className="grid grid-cols-[1fr_auto_1fr_1fr] items-end gap-2">
                 <div>
-                  <label className="text-sm text-muted-foreground">Prix / {form.unit || 'unité'} (€)</label>
+                  <label className="text-sm text-muted-foreground">Pièces</label>
                   <Input
                     type="number"
-                    step="0.0001"
-                    value={form.cost_per_unit}
+                    step="1"
+                    min="1"
+                    placeholder="ex. 12"
+                    value={form.uvc_pieces}
                     onChange={e => {
-                      const cpu = e.target.value;
-                      const qty = parseFloat(form.uvc_quantity) || 0;
-                      const cpuNum = parseFloat(cpu);
+                      const pieces = e.target.value;
+                      const totalQty = computeUvcTotalQty(pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit);
+                      const upNum = parseFloat(form.uvc_price);
                       setForm({
                         ...form,
-                        cost_per_unit: cpu,
-                        uvc_price: !isNaN(cpuNum) && qty > 0 ? (cpuNum * qty).toFixed(4) : '',
+                        uvc_pieces: pieces,
+                        cost_per_unit: !isNaN(upNum) && totalQty > 0 ? (upNum / totalQty).toFixed(4) : form.cost_per_unit,
                       });
                     }}
                   />
                 </div>
+                <div className="pb-2 text-muted-foreground font-medium">×</div>
+                <div>
+                  <label className="text-sm text-muted-foreground">Quantité / pièce</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="ex. 500"
+                    value={form.uvc_piece_qty}
+                    onChange={e => {
+                      const pieceQty = e.target.value;
+                      const totalQty = computeUvcTotalQty(form.uvc_pieces, pieceQty, form.unit, form.uvc_piece_unit);
+                      const upNum = parseFloat(form.uvc_price);
+                      setForm({
+                        ...form,
+                        uvc_piece_qty: pieceQty,
+                        cost_per_unit: !isNaN(upNum) && totalQty > 0 ? (upNum / totalQty).toFixed(4) : form.cost_per_unit,
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground">Unité</label>
+                  <Select value={form.uvc_piece_unit} onValueChange={v => {
+                    const totalQty = computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, v);
+                    const upNum = parseFloat(form.uvc_price);
+                    setForm({
+                      ...form,
+                      uvc_piece_unit: v,
+                      cost_per_unit: !isNaN(upNum) && totalQty > 0 ? (upNum / totalQty).toFixed(4) : form.cost_per_unit,
+                    });
+                  }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {subUnitOptions(form.unit).map(u => (
+                        <SelectItem key={u} value={u}>{u === 'unite' ? 'unité' : u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total UVC : <span className="font-medium text-foreground">
+                  {computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit).toFixed(3)} {form.unit === 'unite' ? 'unité' : form.unit}
+                </span>
+              </p>
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
                 <div>
                   <label className="text-sm text-muted-foreground">Prix UVC (€)</label>
                   <Input
@@ -610,34 +714,34 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                     value={form.uvc_price}
                     onChange={e => {
                       const up = e.target.value;
-                      const qty = parseFloat(form.uvc_quantity) || 0;
+                      const totalQty = computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit);
                       const upNum = parseFloat(up);
                       setForm({
                         ...form,
                         uvc_price: up,
-                        cost_per_unit: !isNaN(upNum) && qty > 0 ? (upNum / qty).toFixed(4) : '',
+                        cost_per_unit: !isNaN(upNum) && totalQty > 0 ? (upNum / totalQty).toFixed(4) : '',
                       });
                     }}
                   />
                 </div>
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground">Quantité par UVC ({form.unit || 'unité'})</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.uvc_quantity}
-                  onChange={e => {
-                    const qtyStr = e.target.value;
-                    const qty = parseFloat(qtyStr) || 0;
-                    const upNum = parseFloat(form.uvc_price);
-                    setForm({
-                      ...form,
-                      uvc_quantity: qtyStr,
-                      cost_per_unit: !isNaN(upNum) && qty > 0 ? (upNum / qty).toFixed(4) : form.cost_per_unit,
-                    });
-                  }}
-                />
+                <div>
+                  <label className="text-sm text-muted-foreground">Prix / {form.unit === 'unite' ? 'unité' : form.unit} (€)</label>
+                  <Input
+                    type="number"
+                    step="0.0001"
+                    value={form.cost_per_unit}
+                    onChange={e => {
+                      const cpu = e.target.value;
+                      const totalQty = computeUvcTotalQty(form.uvc_pieces, form.uvc_piece_qty, form.unit, form.uvc_piece_unit);
+                      const cpuNum = parseFloat(cpu);
+                      setForm({
+                        ...form,
+                        cost_per_unit: cpu,
+                        uvc_price: !isNaN(cpuNum) && totalQty > 0 ? (cpuNum * totalQty).toFixed(4) : '',
+                      });
+                    }}
+                  />
+                </div>
               </div>
             </div>
             <div>
