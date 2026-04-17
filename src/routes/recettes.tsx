@@ -1135,7 +1135,7 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
 }
 
 // ===== STOCK TAB =====
-function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRefresh: () => void }) {
+function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: Ingredient[]; onRefresh: () => void; onOpenIngredient?: (id: string) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filtered = ingredients.filter(i =>
