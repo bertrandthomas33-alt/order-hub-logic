@@ -1465,7 +1465,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
 
 // ---- Sub-components ----
 
-function RecipeCard({ recipe, totalCost, onView, onEdit }: { recipe: Recipe; totalCost: number; onView: () => void; onEdit: () => void }) {
+function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: Recipe; totalCost: number; onView: () => void; onEdit: () => void; onDelete: () => void }) {
   const ingredientCount = recipe.recipe_ingredients?.length || 0;
   const stepCount = recipe.recipe_steps?.length || 0;
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
