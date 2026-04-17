@@ -91,6 +91,7 @@ function RecettesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [view, setView] = useState<View>('list');
@@ -107,14 +108,16 @@ function RecettesPage() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [recipesRes, ingredientsRes, productsRes] = await Promise.all([
+    const [recipesRes, ingredientsRes, productsRes, categoriesRes] = await Promise.all([
       supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
       supabase.from('ingredients').select('*, supplier_ref:suppliers(id, title)').order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
+      supabase.from('categories').select('id, name').order('name'),
     ]);
     if (recipesRes.data) setRecipes(recipesRes.data as any);
     if (ingredientsRes.data) setIngredients(ingredientsRes.data as any);
     if (productsRes.data) setProducts(productsRes.data);
+    if (categoriesRes.data) setCategories(categoriesRes.data);
     setLoading(false);
   }, []);
 
@@ -176,6 +179,32 @@ function RecettesPage() {
     setShowCreateDialog(false);
     await fetchData();
     if (data) openEdit(data as any);
+  };
+
+  const handleCreateNewProductRecipe = async (payload: { name: string; category_id: string; price_b2c: number }) => {
+    const { data: product, error: prodErr } = await supabase.from('products').insert({
+      name: payload.name,
+      category_id: payload.category_id,
+      price_b2c: payload.price_b2c,
+      price: 0,
+      cost_price: 0,
+      stock: 0,
+      unit: 'portion',
+      active: true,
+    }).select('id, name, image_url, unit, category_id, categories(name)').single();
+    if (prodErr || !product) { toast.error('Erreur création produit'); console.error(prodErr); return; }
+
+    const { data: recipe, error: recErr } = await supabase.from('recipes').insert({
+      product_id: product.id,
+      yield_quantity: 1,
+      yield_unit: 'portion',
+    }).select('*, product:products(name, image_url, unit, category_id, categories(name))').single();
+    if (recErr) { toast.error('Erreur création recette'); console.error(recErr); return; }
+
+    toast.success('Fiche technique créée');
+    setShowCreateDialog(false);
+    await fetchData();
+    if (recipe) openEdit(recipe as any);
   };
 
   const openDetail = (recipe: Recipe) => {
@@ -303,9 +332,11 @@ function RecettesPage() {
               setSearch={setSearch}
               loading={loading}
               productsWithoutRecipe={productsWithoutRecipe}
+              categories={categories}
               showCreateDialog={showCreateDialog}
               setShowCreateDialog={setShowCreateDialog}
               handleCreateRecipe={handleCreateRecipe}
+              handleCreateNewProductRecipe={handleCreateNewProductRecipe}
               totalCost={totalCost}
               openDetail={openDetail}
               openEdit={openEdit}
@@ -350,20 +381,36 @@ function RecettesPage() {
 }
 
 // ===== FICHES TAB =====
-function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, showCreateDialog, setShowCreateDialog, handleCreateRecipe, totalCost, openDetail, openEdit }: {
+function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit }: {
   filtered: Recipe[];
   search: string;
   setSearch: (s: string) => void;
   loading: boolean;
   productsWithoutRecipe: any[];
+  categories: { id: string; name: string }[];
   showCreateDialog: boolean;
   setShowCreateDialog: (v: boolean) => void;
   handleCreateRecipe: (id: string) => void;
+  handleCreateNewProductRecipe: (payload: { name: string; category_id: string; price_b2c: number }) => void;
   totalCost: (r: Recipe) => number;
   openDetail: (r: Recipe) => void;
   openEdit: (r: Recipe) => void;
 }) {
   const [categoryTab, setCategoryTab] = useState<string>('all');
+  const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
+  const [newName, setNewName] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [newPriceB2c, setNewPriceB2c] = useState('');
+
+  useEffect(() => {
+    if (showCreateDialog) {
+      setCreateMode('new');
+      setNewName('');
+      setNewCategory('');
+      setNewPriceB2c('');
+    }
+  }, [showCreateDialog]);
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -371,7 +418,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           <h2 className="font-heading text-xl font-bold text-foreground">Fiches Techniques</h2>
           <p className="text-sm text-muted-foreground">Recettes et coûts de revient de vos produits finis</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2" disabled={productsWithoutRecipe.length === 0}>
+        <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
           <Plus className="h-4 w-4" />Nouvelle fiche
         </Button>
       </div>
@@ -444,20 +491,80 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           <DialogHeader>
             <DialogTitle>Nouvelle fiche technique</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground mb-4">Sélectionnez le produit fini :</p>
-          <div className="max-h-64 overflow-y-auto space-y-1">
-            {productsWithoutRecipe.map(p => (
-              <button
-                key={p.id}
-                onClick={() => handleCreateRecipe(p.id)}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
-              >
-                {p.image_url && <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
-                <span className="font-medium">{p.name}</span>
-                <span className="ml-auto text-xs text-muted-foreground">{(p as any).categories?.name}</span>
-              </button>
-            ))}
-          </div>
+
+          <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as 'new' | 'existing')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new">Nouveau produit</TabsTrigger>
+              <TabsTrigger value="existing" disabled={productsWithoutRecipe.length === 0}>
+                Produit existant ({productsWithoutRecipe.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="new" className="space-y-4 pt-4">
+              <div>
+                <label className="text-xs text-muted-foreground">Nom du plat</label>
+                <Input
+                  placeholder="Ex : Salade César"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Catégorie</label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner une catégorie" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Prix B2C (€)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newPriceB2c}
+                  onChange={(e) => setNewPriceB2c(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Annuler</Button>
+                <Button
+                  onClick={() => {
+                    if (!newName.trim()) { toast.error('Nom requis'); return; }
+                    if (!newCategory) { toast.error('Catégorie requise'); return; }
+                    handleCreateNewProductRecipe({
+                      name: newName.trim(),
+                      category_id: newCategory,
+                      price_b2c: parseFloat(newPriceB2c) || 0,
+                    });
+                  }}
+                >
+                  Créer la fiche
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="existing" className="pt-4">
+              <p className="text-sm text-muted-foreground mb-3">Sélectionnez le produit fini :</p>
+              <div className="max-h-64 overflow-y-auto space-y-1">
+                {productsWithoutRecipe.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleCreateRecipe(p.id)}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-accent transition-colors"
+                  >
+                    {p.image_url && <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" />}
+                    <span className="font-medium">{p.name}</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{(p as any).categories?.name}</span>
+                  </button>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
