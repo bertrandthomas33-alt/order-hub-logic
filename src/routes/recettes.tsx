@@ -1162,50 +1162,72 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
           <Warehouse className="mb-4 h-12 w-12 text-muted-foreground/50" />
           <p className="text-lg font-medium text-muted-foreground">Aucun ingrédient</p>
         </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ingrédient</TableHead>
-                <TableHead>Fournisseur</TableHead>
-                <TableHead className="text-right">En stock</TableHead>
-                <TableHead className="text-right">Seuil min</TableHead>
-                <TableHead className="text-right">Statut</TableHead>
-                <TableHead className="w-32"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(ing => {
-                const qty = (ing as any).stock_quantity ?? 0;
-                const min = (ing as any).stock_min ?? 0;
-                const isLow = min > 0 && qty <= min;
-                return (
-                  <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
-                    <TableCell className="font-medium">{ing.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{ing.supplier || '—'}</TableCell>
-                    <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
-                    <TableCell className="text-right">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isLow ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
-                        {isLow ? 'Bas' : 'OK'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        className="h-8 w-24 ml-auto"
-                        value={qty}
-                        onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      ) : (() => {
+        const grouped = filtered.reduce<Record<string, Ingredient[]>>((acc, ing) => {
+          const key = ing.supplier_ref?.title || ing.supplier || 'Sans fournisseur';
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(ing);
+          return acc;
+        }, {});
+        const sortedSuppliers = Object.keys(grouped).sort((a, b) =>
+          a === 'Sans fournisseur' ? 1 : b === 'Sans fournisseur' ? -1 : a.localeCompare(b)
+        );
+        return (
+          <div className="space-y-6">
+            {sortedSuppliers.map(supplierName => (
+              <section key={supplierName}>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="font-heading text-base font-semibold text-foreground flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    {supplierName}
+                  </h3>
+                  <span className="text-xs text-muted-foreground">{grouped[supplierName].length} ingrédient{grouped[supplierName].length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ingrédient</TableHead>
+                        <TableHead className="text-right">En stock</TableHead>
+                        <TableHead className="text-right">Seuil min</TableHead>
+                        <TableHead className="text-right">Statut</TableHead>
+                        <TableHead className="w-32"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {grouped[supplierName].map(ing => {
+                        const qty = (ing as any).stock_quantity ?? 0;
+                        const min = (ing as any).stock_min ?? 0;
+                        const isLow = min > 0 && qty <= min;
+                        return (
+                          <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
+                            <TableCell className="font-medium">{ing.name}</TableCell>
+                            <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
+                            <TableCell className="text-right">
+                              <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isLow ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+                                {isLow ? 'Bas' : 'OK'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                className="h-8 w-24 ml-auto"
+                                value={qty}
+                                onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </section>
+            ))}
+          </div>
+        );
+      })()}
     </>
   );
 }
