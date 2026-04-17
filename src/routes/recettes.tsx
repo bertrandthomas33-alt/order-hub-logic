@@ -353,6 +353,7 @@ function RecettesPage() {
               totalCost={totalCost}
               openDetail={openDetail}
               openEdit={openEdit}
+              onDelete={(r) => setRecipeToDelete(r)}
             />
           </TabsContent>
 
