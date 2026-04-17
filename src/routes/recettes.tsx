@@ -39,8 +39,12 @@ type Ingredient = {
   unit: string;
   cost_per_unit: number;
   supplier: string | null;
+  supplier_id: string | null;
+  supplier_ref?: { id: string; title: string } | null;
   active: boolean;
 };
+
+type SupplierOption = { id: string; title: string };
 
 type Recipe = {
   id: string;
@@ -100,7 +104,7 @@ function RecettesPage() {
     setLoading(true);
     const [recipesRes, ingredientsRes, productsRes] = await Promise.all([
       supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
-      supabase.from('ingredients').select('*').order('name'),
+      supabase.from('ingredients').select('*, supplier_ref:suppliers(id, title)').order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
     ]);
     if (recipesRes.data) setRecipes(recipesRes.data as any);
@@ -415,22 +419,30 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '' });
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
 
-  const filtered = ingredients.filter(i =>
-    i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (i.supplier || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    supabase.from('suppliers').select('id, title').eq('active', true).order('title').then(({ data }) => {
+      if (data) setSuppliers(data);
+    });
+  }, []);
+
+  const filtered = ingredients.filter(i => {
+    const q = searchTerm.toLowerCase();
+    return i.name.toLowerCase().includes(q) ||
+      (i.supplier_ref?.title || i.supplier || '').toLowerCase().includes(q);
+  });
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '' });
     setShowDialog(true);
   };
 
   const openEditIng = (ing: Ingredient) => {
     setEditing(ing);
-    setForm({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit), supplier: ing.supplier || '' });
+    setForm({ name: ing.name, unit: ing.unit, cost_per_unit: String(ing.cost_per_unit), supplier_id: ing.supplier_id || '' });
     setShowDialog(true);
   };
 
@@ -440,7 +452,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
       name: form.name.trim(),
       unit: form.unit,
       cost_per_unit: parseFloat(form.cost_per_unit) || 0,
-      supplier: form.supplier.trim() || null,
+      supplier_id: form.supplier_id || null,
     };
 
     if (editing) {
@@ -503,7 +515,7 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
                   <TableCell className="font-medium">{ing.name}</TableCell>
                   <TableCell>{ing.unit}</TableCell>
                   <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
-                  <TableCell className="text-muted-foreground">{ing.supplier || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground">{ing.supplier_ref?.title || ing.supplier || '—'}</TableCell>
                   <TableCell className="text-right">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                       {ing.active ? 'Actif' : 'Inactif'}
@@ -544,7 +556,15 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
             </div>
             <div>
               <label className="text-sm text-muted-foreground">Fournisseur</label>
-              <Input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })} placeholder="Nom du fournisseur" />
+              <Select value={form.supplier_id || 'none'} onValueChange={v => setForm({ ...form, supplier_id: v === 'none' ? '' : v })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner un fournisseur" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Aucun —</SelectItem>
+                  {suppliers.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
