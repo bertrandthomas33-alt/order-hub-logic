@@ -104,7 +104,7 @@ function RecettesPage() {
     setLoading(true);
     const [recipesRes, ingredientsRes, productsRes] = await Promise.all([
       supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
-      supabase.from('ingredients').select('*').order('name'),
+      supabase.from('ingredients').select('*, supplier_ref:suppliers(id, title)').order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
     ]);
     if (recipesRes.data) setRecipes(recipesRes.data as any);
