@@ -422,8 +422,36 @@ function IngredientsTab({ ingredients, onRefresh }: { ingredients: Ingredient[];
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_quantity: '1', uvc_price: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+
+  // Conversion factor: how many "unit" are in 1 "subUnit"
+  // unit ∈ {kg, litre, unite}, subUnit ∈ {kg, g, litre, ml, unite}
+  const conversionFactor = (unit: string, subUnit: string): number => {
+    if (unit === 'kg') {
+      if (subUnit === 'kg') return 1;
+      if (subUnit === 'g') return 0.001;
+    }
+    if (unit === 'litre') {
+      if (subUnit === 'litre') return 1;
+      if (subUnit === 'ml') return 0.001;
+    }
+    if (unit === 'unite' && subUnit === 'unite') return 1;
+    return 1;
+  };
+
+  const subUnitOptions = (unit: string): string[] => {
+    if (unit === 'kg') return ['kg', 'g'];
+    if (unit === 'litre') return ['litre', 'ml'];
+    return ['unite'];
+  };
+
+  // Total quantity in management unit
+  const computeUvcTotalQty = (pieces: string, pieceQty: string, unit: string, subUnit: string): number => {
+    const p = parseFloat(pieces) || 0;
+    const q = parseFloat(pieceQty) || 0;
+    return p * q * conversionFactor(unit, subUnit);
+  };
 
   useEffect(() => {
     supabase.from('suppliers').select('id, title').eq('active', true).order('title').then(({ data }) => {
