@@ -83,15 +83,21 @@ function CataloguePage() {
 
   if (!isAuthenticated) return null;
 
-  const filteredCategories = activeWarehouse === 'all'
-    ? categories
-    : categories.filter((c) => c.warehouse_id === activeWarehouse);
-
-  const filteredProducts = products.filter((p) => {
-    const matchCategory = !activeCategory || p.category_id === activeCategory;
+  // Products filtered by warehouse + search (ignoring active category) — used to know which categories have products
+  const productsForCategoryCount = products.filter((p) => {
     const matchWarehouse = activeWarehouse === 'all' || p.categories?.warehouse_id === activeWarehouse;
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase());
-    return matchCategory && matchWarehouse && matchSearch;
+    return matchWarehouse && matchSearch;
+  });
+  const categoriesWithProducts = new Set(productsForCategoryCount.map((p) => p.category_id));
+
+  const filteredCategories = (activeWarehouse === 'all'
+    ? categories
+    : categories.filter((c) => c.warehouse_id === activeWarehouse)
+  ).filter((c) => categoriesWithProducts.has(c.id));
+
+  const filteredProducts = productsForCategoryCount.filter((p) => {
+    return !activeCategory || p.category_id === activeCategory;
   });
 
   return (
