@@ -131,6 +131,7 @@ export type Database = {
           stock_min: number
           stock_quantity: number
           supplier: string | null
+          supplier_id: string | null
           unit: string
           updated_at: string
         }
@@ -143,6 +144,7 @@ export type Database = {
           stock_min?: number
           stock_quantity?: number
           supplier?: string | null
+          supplier_id?: string | null
           unit?: string
           updated_at?: string
         }
@@ -155,10 +157,19 @@ export type Database = {
           stock_min?: number
           stock_quantity?: number
           supplier?: string | null
+          supplier_id?: string | null
           unit?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
