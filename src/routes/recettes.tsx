@@ -1204,6 +1204,7 @@ function StockTab({ ingredients, onRefresh }: { ingredients: Ingredient[]; onRef
                           <TableRow key={ing.id} className={isLow ? 'bg-destructive/5' : ''}>
                             <TableCell className="font-medium">{ing.name}</TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
+                            <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
                             <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
                             <TableCell className="text-right">
                               <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isLow ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
