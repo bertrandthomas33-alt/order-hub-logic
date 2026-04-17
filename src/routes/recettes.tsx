@@ -415,7 +415,7 @@ function DeleteRecipeDialog({ recipe, onCancel, onConfirm }: { recipe: Recipe | 
 }
 
 // ===== FICHES TAB =====
-function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit }: {
+function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit, onDelete }: {
   filtered: Recipe[];
   search: string;
   setSearch: (s: string) => void;
@@ -429,6 +429,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
   totalCost: (r: Recipe) => number;
   openDetail: (r: Recipe) => void;
   openEdit: (r: Recipe) => void;
+  onDelete: (r: Recipe) => void;
 }) {
   const [categoryTab, setCategoryTab] = useState<string>('all');
   const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
