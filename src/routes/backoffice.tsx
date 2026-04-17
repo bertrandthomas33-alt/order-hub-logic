@@ -142,7 +142,17 @@ function BackofficePage() {
           ))}
         </div>
 
-
+        {activeTab !== 'entrepots' && (
+          <div className="mb-6 relative max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={`Rechercher ${activeTab === 'produits' ? 'un produit' : activeTab === 'clients' ? 'un client' : 'une commande'}…`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
 
 
         {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} onRefresh={() => {
