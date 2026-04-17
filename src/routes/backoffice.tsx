@@ -463,9 +463,9 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
               <TableHead>Nom</TableHead>
               <TableHead>Catégorie</TableHead>
               <TableHead>Entrepôt</TableHead>
+              <TableHead className="text-right">Prix de revient</TableHead>
               <TableHead className="text-right">Prix BtoB</TableHead>
               <TableHead className="text-right">Prix BtoC</TableHead>
-              <TableHead>Unité</TableHead>
               <TableHead className="text-right">Stock</TableHead>
               <TableHead>Actif</TableHead>
               <TableHead className="w-10"></TableHead>
