@@ -283,7 +283,6 @@ function RecettesPage() {
     setView('list');
   };
 
-  const [recipeToDelete, setRecipeToDelete] = useState<Recipe | null>(null);
 
   const handleDeleteRecipe = async (id: string) => {
     const { error } = await supabase.from('recipes').delete().eq('id', id);
