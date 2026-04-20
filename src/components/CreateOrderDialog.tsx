@@ -163,20 +163,22 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
             </div>
             <div>
               <Label>Entrepôt *</Label>
-              <Select value={warehouseId} onValueChange={setWarehouseId} disabled={!clientId || availableWarehouses.length === 0}>
+              <Select value={warehouseId} onValueChange={setWarehouseId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !clientId ? 'Sélectionnez un client d\'abord'
-                    : availableWarehouses.length === 0 ? 'Aucun entrepôt associé'
-                    : 'Choisir un entrepôt'
-                  } />
+                  <SelectValue placeholder="Choisir un entrepôt" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableWarehouses.map(w => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                      {allowedWarehouseIds && !allowedWarehouseIds.includes(w.id) ? ' (non associé)' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {clientId && allowedWarehouseIds && allowedWarehouseIds.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">Aucun entrepôt associé à ce client — vous pouvez quand même en choisir un.</p>
+              )}
             </div>
             <div>
               <Label>Date de livraison</Label>
