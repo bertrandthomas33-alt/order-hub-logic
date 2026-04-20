@@ -335,6 +335,99 @@ export type Database = {
           },
         ]
       }
+      purchase_order_items: {
+        Row: {
+          cost_per_unit: number
+          created_at: string
+          id: string
+          ingredient_id: string
+          ingredient_name: string
+          purchase_order_id: string
+          quantity_uvc: number
+          unit: string
+          uvc_label: string | null
+          uvc_quantity: number
+        }
+        Insert: {
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          ingredient_name: string
+          purchase_order_id: string
+          quantity_uvc?: number
+          unit?: string
+          uvc_label?: string | null
+          uvc_quantity?: number
+        }
+        Update: {
+          cost_per_unit?: number
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          ingredient_name?: string
+          purchase_order_id?: string
+          quantity_uvc?: number
+          unit?: string
+          uvc_label?: string | null
+          uvc_quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id: string | null
+          supplier_label: string
+          total: number
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id?: string | null
+          supplier_label: string
+          total?: number
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["purchase_order_status"]
+          supplier_id?: string | null
+          supplier_label?: string
+          total?: number
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
       recipe_ingredients: {
         Row: {
           created_at: string
@@ -625,10 +718,15 @@ export type Database = {
         Args: { _super_id: string }
         Returns: undefined
       }
+      validate_purchase_order: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "pdv"
       order_status: "pending" | "confirmed" | "in_production" | "delivered"
+      purchase_order_status: "pending" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -758,6 +856,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "pdv"],
       order_status: ["pending", "confirmed", "in_production", "delivered"],
+      purchase_order_status: ["pending", "completed"],
     },
   },
 } as const
