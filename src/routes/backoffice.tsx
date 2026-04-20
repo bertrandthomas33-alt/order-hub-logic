@@ -77,7 +77,7 @@ function BackofficePage() {
     const fetchData = async () => {
       const [ordersRes, productsRes, clientsRes, warehousesRes, categoriesRes] = await Promise.all([
         supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name, category_id, categories(name)))').order('created_at', { ascending: false }),
-        supabase.from('products').select('*, categories(name, warehouses(name))').order('name'),
+        supabase.from('products').select('*, categories(name, warehouse_id, warehouses(id, name))').order('name'),
         supabase.from('clients').select('*').order('name'),
         supabase.from('warehouses').select('*').order('name'),
         supabase.from('categories').select('*, warehouses(id, name)').order('name'),
@@ -160,7 +160,7 @@ function BackofficePage() {
           supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name, category_id, categories(name)))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
         }} />}
         {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} warehouses={warehouses} search={search} onRefresh={() => {
-          supabase.from('products').select('*, categories(name, warehouses(name))').order('name').then(r => setProducts(r.data ?? []));
+          supabase.from('products').select('*, categories(name, warehouse_id, warehouses(id, name))').order('name').then(r => setProducts(r.data ?? []));
         }} />}
         {activeTab === 'clients' && <ClientsTable clients={clients} search={search} onRefresh={() => {
           supabase.from('clients').select('*').order('name').then(r => setClients(r.data ?? []));
