@@ -1834,7 +1834,17 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
                             <TableRow key={it.id}>
                               <TableCell className="font-medium">{it.ingredient_name}</TableCell>
                               <TableCell className="text-muted-foreground text-sm">{it.uvc_label || '—'}</TableCell>
-                              <TableCell className="text-right">{it.quantity_uvc}</TableCell>
+                              <TableCell className="text-right">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  defaultValue={it.quantity_uvc}
+                                  onBlur={(e) => handleUpdatePendingItemQty(po, it.id, parseFloat(e.target.value) || 0)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                  className="h-7 w-20 text-right text-sm ml-auto"
+                                />
+                              </TableCell>
                               <TableCell className="text-right">{baseQty.toFixed(2)} {it.unit}</TableCell>
                               <TableCell className="text-right font-medium">{lineTotal.toFixed(2)} €</TableCell>
                             </TableRow>
