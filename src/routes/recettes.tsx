@@ -1306,6 +1306,106 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
     0
   );
 
+  // ----- Commandes passées -----
+  type PastOrder = {
+    id: string;
+    supplier_label: string;
+    total: number;
+    validated_at: string | null;
+    created_at: string;
+    items: Array<{
+      id: string;
+      ingredient_name: string;
+      uvc_label: string | null;
+      uvc_quantity: number;
+      quantity_uvc: number;
+      unit: string;
+      cost_per_unit: number;
+    }>;
+  };
+  const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
+  const [validating, setValidating] = useState<string | null>(null);
+  const [expandedPast, setExpandedPast] = useState<Record<string, boolean>>({});
+
+  const loadPastOrders = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select('id, supplier_label, total, validated_at, created_at, purchase_order_items(id, ingredient_name, uvc_label, uvc_quantity, quantity_uvc, unit, cost_per_unit)')
+      .eq('status', 'completed')
+      .order('validated_at', { ascending: false })
+      .limit(50);
+    if (error) {
+      toast.error('Erreur chargement historique');
+    } else if (data) {
+      setPastOrders(
+        data.map((o: any) => ({
+          id: o.id,
+          supplier_label: o.supplier_label,
+          total: Number(o.total) || 0,
+          validated_at: o.validated_at,
+          created_at: o.created_at,
+          items: (o.purchase_order_items || []).map((it: any) => ({
+            id: it.id,
+            ingredient_name: it.ingredient_name,
+            uvc_label: it.uvc_label,
+            uvc_quantity: Number(it.uvc_quantity) || 1,
+            quantity_uvc: Number(it.quantity_uvc) || 0,
+            unit: it.unit,
+            cost_per_unit: Number(it.cost_per_unit) || 0,
+          })),
+        }))
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPastOrders();
+  }, [loadPastOrders]);
+
+  const handleValidateSupplier = async (supName: string) => {
+    const items = cartBySupplier[supName];
+    if (!items || items.length === 0) return;
+    setValidating(supName);
+    try {
+      const supplierId = items[0].ingredient.supplier_id;
+      const supTotal = items.reduce(
+        (s, i) => s + i.quantity * (Number(i.ingredient.uvc_quantity) || 1) * (Number(i.ingredient.cost_per_unit) || 0),
+        0
+      );
+      const { data: order, error: orderErr } = await supabase
+        .from('purchase_orders')
+        .insert({ supplier_label: supName, supplier_id: supplierId, total: supTotal, status: 'pending' })
+        .select()
+        .single();
+      if (orderErr || !order) throw orderErr || new Error('Création commande échouée');
+
+      const itemsPayload = items.map(it => ({
+        purchase_order_id: order.id,
+        ingredient_id: it.ingredient.id,
+        ingredient_name: it.ingredient.name,
+        uvc_label: it.ingredient.uvc,
+        uvc_quantity: Number(it.ingredient.uvc_quantity) || 1,
+        quantity_uvc: it.quantity,
+        unit: it.ingredient.unit,
+        cost_per_unit: Number(it.ingredient.cost_per_unit) || 0,
+      }));
+      const { error: itemsErr } = await supabase.from('purchase_order_items').insert(itemsPayload);
+      if (itemsErr) throw itemsErr;
+
+      const { error: validErr } = await supabase.rpc('validate_purchase_order', { _order_id: order.id });
+      if (validErr) throw validErr;
+
+      items.forEach(it => removeItem(it.ingredient.id));
+      toast.success(`Commande ${supName} validée — stocks mis à jour`);
+      loadPastOrders();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Erreur validation commande');
+    } finally {
+      setValidating(null);
+    }
+  };
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
