@@ -875,12 +875,13 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                             </span>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-primary hover:bg-primary/10"
-                              title="Ajouter au panier d'achat"
-                              onClick={() => {
+                            {(() => {
+                              const inCart = cartItems.find(ci => ci.ingredient.id === ing.id);
+                              const draftRaw = qtyDraft[ing.id];
+                              const draft = draftRaw !== undefined ? draftRaw : '1';
+                              const addToCart = () => {
+                                const qty = parseFloat(draft) || 0;
+                                if (qty <= 0) { toast.error('Quantité invalide'); return; }
                                 usePurchaseCartStore.getState().addItem({
                                   id: ing.id,
                                   name: ing.name,
@@ -891,12 +892,40 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                                   supplier_title: ing.supplier_ref?.title ?? null,
                                   uvc: ing.uvc,
                                   uvc_quantity: ing.uvc_quantity,
-                                });
-                                toast.success(`${ing.name} ajouté à la commande`);
-                              }}
-                            >
-                              <ShoppingBasket className="h-4 w-4" />
-                            </Button>
+                                }, qty);
+                                toast.success(`${ing.name}: +${qty} UVC ajouté(s)`);
+                                setQtyDraft(prev => ({ ...prev, [ing.id]: '1' }));
+                              };
+                              return (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={draft}
+                                    onChange={e => setQtyDraft(prev => ({ ...prev, [ing.id]: e.target.value }))}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addToCart(); } }}
+                                    className="h-8 w-16 text-center text-sm"
+                                    title="Quantité en UVC à ajouter"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">UVC</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-primary hover:bg-primary/10 relative"
+                                    title="Ajouter au panier d'achat"
+                                    onClick={addToCart}
+                                  >
+                                    <ShoppingBasket className="h-4 w-4" />
+                                    {inCart && (
+                                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold h-4 min-w-4 px-1">
+                                        {Number(inCart.quantity)}
+                                      </span>
+                                    )}
+                                  </Button>
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-end gap-1">
