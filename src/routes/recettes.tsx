@@ -1287,6 +1287,10 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
   const removeItem = usePurchaseCartStore(s => s.removeItem);
   const clearCart = usePurchaseCartStore(s => s.clear);
 
+  const [collapsedSuppliers, setCollapsedSuppliers] = useState<Record<string, boolean>>({});
+  const toggleSupplier = (name: string) =>
+    setCollapsedSuppliers(prev => ({ ...prev, [name]: !prev[name] }));
+
   // Group cart by supplier
   const cartBySupplier = cartItems.reduce<Record<string, PurchaseCartItem[]>>((acc, it) => {
     const sup = it.ingredient.supplier_title || it.ingredient.supplier || 'Sans fournisseur';
