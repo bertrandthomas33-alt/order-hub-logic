@@ -155,7 +155,7 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         body,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [56, 102, 65], textColor: 255, fontSize: 8 },
+        headStyles: { fillColor: [56, 102, 65], textColor: 255, fontSize: 8, halign: 'center', valign: 'bottom', minCellHeight: 35 },
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 40 },
           [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240] },
@@ -167,6 +167,26 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
             data.cell.styles.textColor = 255;
             data.cell.styles.fontStyle = 'bold';
             data.cell.styles.fontSize = 9;
+          }
+          // Reserve narrow columns for vertical client headers
+          if (data.section === 'head' && data.column.index > 0 && data.column.index < headers.length - 1) {
+            data.cell.styles.cellWidth = 8;
+            data.cell.text = [''];
+          }
+        },
+        didDrawCell: (data: any) => {
+          // Draw client names rotated 90° in head cells
+          if (
+            data.section === 'head' &&
+            data.column.index > 0 &&
+            data.column.index < headers.length - 1
+          ) {
+            const label = String(headers[data.column.index] ?? '');
+            const x = data.cell.x + data.cell.width / 2 + 2;
+            const y = data.cell.y + data.cell.height - 2;
+            doc.setTextColor(255);
+            doc.setFontSize(8);
+            doc.text(label, x, y, { angle: 90, align: 'left' });
           }
         },
       });
