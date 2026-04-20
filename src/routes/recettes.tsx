@@ -1947,6 +1947,7 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
 // ===== STOCK TAB =====
 function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: Ingredient[]; onRefresh: () => void; onOpenIngredient?: (id: string) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const addToCart = usePurchaseCartStore(s => s.addItem);
 
   const filtered = ingredients.filter(i =>
     i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1984,14 +1985,57 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
 
       {lowStock.length > 0 && (
         <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-          <h3 className="font-semibold text-destructive mb-2 flex items-center gap-2">
-            <Warehouse className="h-4 w-4" />Stock bas — {lowStock.length} ingrédient{lowStock.length > 1 ? 's' : ''}
-          </h3>
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <h3 className="font-semibold text-destructive flex items-center gap-2">
+              <Warehouse className="h-4 w-4" />Stock bas — {lowStock.length} ingrédient{lowStock.length > 1 ? 's' : ''}
+            </h3>
+            <Button
+              size="sm"
+              onClick={() => {
+                lowStock.forEach(ing => {
+                  addToCart({
+                    id: ing.id,
+                    name: ing.name,
+                    unit: ing.unit,
+                    cost_per_unit: Number((ing as any).cost_per_unit) || 0,
+                    supplier: ing.supplier || null,
+                    supplier_id: (ing as any).supplier_id || null,
+                    supplier_title: ing.supplier_ref?.title || null,
+                    uvc: (ing as any).uvc || null,
+                    uvc_quantity: Number((ing as any).uvc_quantity) || 1,
+                  }, 1);
+                });
+                toast.success(`${lowStock.length} ingrédient${lowStock.length > 1 ? 's' : ''} ajouté${lowStock.length > 1 ? 's' : ''} au panier`);
+              }}
+            >
+              <ShoppingBasket className="h-4 w-4 mr-1" />Tout ajouter au panier
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {lowStock.map(ing => (
-              <span key={ing.id} className="inline-flex items-center rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+              <button
+                key={ing.id}
+                type="button"
+                onClick={() => {
+                  addToCart({
+                    id: ing.id,
+                    name: ing.name,
+                    unit: ing.unit,
+                    cost_per_unit: Number((ing as any).cost_per_unit) || 0,
+                    supplier: ing.supplier || null,
+                    supplier_id: (ing as any).supplier_id || null,
+                    supplier_title: ing.supplier_ref?.title || null,
+                    uvc: (ing as any).uvc || null,
+                    uvc_quantity: Number((ing as any).uvc_quantity) || 1,
+                  }, 1);
+                  toast.success(`${ing.name} ajouté au panier`);
+                }}
+                className="inline-flex items-center gap-1 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-colors px-3 py-1 text-xs font-medium text-destructive"
+                title="Ajouter au panier"
+              >
                 {ing.name} — {(ing as any).stock_quantity} {ing.unit}
-              </span>
+                <Plus className="h-3 w-3" />
+              </button>
             ))}
           </div>
         </div>
