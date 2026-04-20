@@ -1282,14 +1282,135 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
 
   const totalEstimatedCost = sorted.reduce((sum, item) => sum + item.totalQty * item.ingredient.cost_per_unit, 0);
 
+  const cartItems = usePurchaseCartStore(s => s.items);
+  const updateQty = usePurchaseCartStore(s => s.updateQuantity);
+  const removeItem = usePurchaseCartStore(s => s.removeItem);
+  const clearCart = usePurchaseCartStore(s => s.clear);
+
+  // Group cart by supplier
+  const cartBySupplier = cartItems.reduce<Record<string, PurchaseCartItem[]>>((acc, it) => {
+    const sup = it.ingredient.supplier_title || it.ingredient.supplier || 'Sans fournisseur';
+    if (!acc[sup]) acc[sup] = [];
+    acc[sup].push(it);
+    return acc;
+  }, {});
+  const cartSupNames = Object.keys(cartBySupplier).sort((a, b) =>
+    a === 'Sans fournisseur' ? 1 : b === 'Sans fournisseur' ? -1 : a.localeCompare(b)
+  );
+  const cartTotal = cartItems.reduce(
+    (s, i) => s + i.quantity * (Number(i.ingredient.uvc_quantity) || 1) * (Number(i.ingredient.cost_per_unit) || 0),
+    0
+  );
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-foreground">Commandes fournisseurs</h2>
-          <p className="text-sm text-muted-foreground">Récapitulatif des besoins en ingrédients basé sur vos fiches techniques</p>
+          <p className="text-sm text-muted-foreground">Commande en cours et récapitulatif des besoins basé sur vos fiches techniques</p>
         </div>
       </div>
+
+      {/* ===== COMMANDE EN COURS (panier manuel) ===== */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <ShoppingBasket className="h-5 w-5 text-primary" />
+            Commande en cours
+            {cartItems.length > 0 && (
+              <span className="text-xs font-normal text-muted-foreground">({cartItems.length} ingrédient{cartItems.length > 1 ? 's' : ''})</span>
+            )}
+          </h3>
+          {cartItems.length > 0 && (
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { clearCart(); toast.success('Commande vidée'); }}>
+              <Trash2 className="h-4 w-4 mr-1" />Vider
+            </Button>
+          )}
+        </div>
+
+        {cartItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
+            <ShoppingBasket className="mb-3 h-10 w-10 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">Aucun ingrédient dans la commande</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Ajoutez-en depuis l'onglet Ingrédients via le bouton panier</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {cartSupNames.map(supName => {
+              const items = cartBySupplier[supName];
+              const supTotal = items.reduce(
+                (s, i) => s + i.quantity * (Number(i.ingredient.uvc_quantity) || 1) * (Number(i.ingredient.cost_per_unit) || 0),
+                0
+              );
+              return (
+                <div key={supName} className="rounded-xl border border-border bg-card overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border">
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold text-foreground">{supName}</span>
+                      <span className="text-xs text-muted-foreground">({items.length})</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ingrédient</TableHead>
+                        <TableHead>UVC</TableHead>
+                        <TableHead className="text-center w-40">Quantité</TableHead>
+                        <TableHead className="text-right">Sous-total</TableHead>
+                        <TableHead className="w-12"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map(it => {
+                        const lineTotal = it.quantity * (Number(it.ingredient.uvc_quantity) || 1) * (Number(it.ingredient.cost_per_unit) || 0);
+                        return (
+                          <TableRow key={it.ingredient.id}>
+                            <TableCell className="font-medium">{it.ingredient.name}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{it.ingredient.uvc || '—'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(it.ingredient.id, it.quantity - 1)}>
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={it.quantity}
+                                  onChange={(e) => updateQty(it.ingredient.id, parseInt(e.target.value) || 0)}
+                                  className="h-7 w-14 text-center text-sm"
+                                />
+                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQty(it.ingredient.id, it.quantity + 1)}>
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">{lineTotal.toFixed(2)} €</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeItem(it.ingredient.id)}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              );
+            })}
+            <div className="flex items-center justify-end gap-3 px-4 py-3 rounded-xl bg-primary/5 border border-primary/20">
+              <span className="text-sm text-muted-foreground">Total commande :</span>
+              <span className="text-lg font-bold text-foreground">{cartTotal.toFixed(2)} €</span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Séparateur */}
+      <div className="mb-6 border-t border-border" />
+      <h3 className="font-heading text-lg font-semibold text-foreground mb-4">Besoins basés sur les fiches techniques</h3>
 
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
