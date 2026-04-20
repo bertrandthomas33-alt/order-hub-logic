@@ -830,6 +830,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                         <TableHead className="text-right">Coût / unité</TableHead>
                         <TableHead className="text-right">Stock</TableHead>
                         <TableHead className="text-right">Statut</TableHead>
+                        <TableHead className="w-12 text-center">Panier</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -845,6 +846,30 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                               {ing.active ? 'Actif' : 'Inactif'}
                             </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary hover:bg-primary/10"
+                              title="Ajouter au panier d'achat"
+                              onClick={() => {
+                                usePurchaseCartStore.getState().addItem({
+                                  id: ing.id,
+                                  name: ing.name,
+                                  unit: ing.unit,
+                                  cost_per_unit: ing.cost_per_unit,
+                                  supplier: ing.supplier,
+                                  supplier_id: ing.supplier_id,
+                                  supplier_title: ing.supplier_ref?.title ?? null,
+                                  uvc: ing.uvc,
+                                  uvc_quantity: ing.uvc_quantity,
+                                });
+                                toast.success(`${ing.name} ajouté à la commande`);
+                              }}
+                            >
+                              <ShoppingBasket className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-end gap-1">
