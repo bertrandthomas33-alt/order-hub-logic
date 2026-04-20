@@ -629,6 +629,8 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
+  const cartItems = usePurchaseCartStore(s => s.items);
 
   // Conversion factor: how many "unit" are in 1 "subUnit"
   // unit ∈ {kg, litre, unite}, subUnit ∈ {kg, g, litre, ml, unite}
@@ -807,18 +809,27 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
         <div className="space-y-4">
           {sortedGroups.map(([key, group]) => {
             const collapsed = !!collapsedGroups[key];
+            const groupIngredientIds = new Set(group.items.map(i => i.id));
+            const pendingItems = cartItems.filter(ci => groupIngredientIds.has(ci.ingredient.id));
+            const pendingUvc = pendingItems.reduce((s, i) => s + i.quantity, 0);
             return (
               <div key={key} className="rounded-xl border border-border bg-card overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleGroup(key)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <ChevronDown className={`h-4 w-4 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-                    <span className="font-semibold text-foreground">{group.title}</span>
-                    <span className="text-xs text-muted-foreground">({group.items.length})</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ChevronDown className={`h-4 w-4 transition-transform shrink-0 ${collapsed ? '-rotate-90' : ''}`} />
+                    <span className="font-semibold text-foreground truncate">{group.title}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">({group.items.length})</span>
                   </div>
+                  {pendingItems.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium shrink-0">
+                      <ShoppingBasket className="h-3.5 w-3.5" />
+                      Commande en cours · {pendingItems.length} réf. · {Number(pendingUvc.toFixed(2))} UVC
+                    </span>
+                  )}
                 </button>
                 {!collapsed && (
                   <Table>
@@ -830,7 +841,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                         <TableHead className="text-right">Coût / unité</TableHead>
                         <TableHead className="text-right">Stock</TableHead>
                         <TableHead className="text-right">Statut</TableHead>
-                        <TableHead className="w-12 text-center">Panier</TableHead>
+                        <TableHead className="w-44 text-center">Commander</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -864,12 +875,13 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                             </span>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-primary hover:bg-primary/10"
-                              title="Ajouter au panier d'achat"
-                              onClick={() => {
+                            {(() => {
+                              const inCart = cartItems.find(ci => ci.ingredient.id === ing.id);
+                              const draftRaw = qtyDraft[ing.id];
+                              const draft = draftRaw !== undefined ? draftRaw : '1';
+                              const addToCart = () => {
+                                const qty = parseFloat(draft) || 0;
+                                if (qty <= 0) { toast.error('Quantité invalide'); return; }
                                 usePurchaseCartStore.getState().addItem({
                                   id: ing.id,
                                   name: ing.name,
@@ -880,12 +892,40 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                                   supplier_title: ing.supplier_ref?.title ?? null,
                                   uvc: ing.uvc,
                                   uvc_quantity: ing.uvc_quantity,
-                                });
-                                toast.success(`${ing.name} ajouté à la commande`);
-                              }}
-                            >
-                              <ShoppingBasket className="h-4 w-4" />
-                            </Button>
+                                }, qty);
+                                toast.success(`${ing.name}: +${qty} UVC ajouté(s)`);
+                                setQtyDraft(prev => ({ ...prev, [ing.id]: '1' }));
+                              };
+                              return (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={draft}
+                                    onChange={e => setQtyDraft(prev => ({ ...prev, [ing.id]: e.target.value }))}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addToCart(); } }}
+                                    className="h-8 w-16 text-center text-sm"
+                                    title="Quantité en UVC à ajouter"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">UVC</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-primary hover:bg-primary/10 relative"
+                                    title="Ajouter au panier d'achat"
+                                    onClick={addToCart}
+                                  >
+                                    <ShoppingBasket className="h-4 w-4" />
+                                    {inCart && (
+                                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold h-4 min-w-4 px-1">
+                                        {Number(inCart.quantity)}
+                                      </span>
+                                    )}
+                                  </Button>
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-end gap-1">
