@@ -629,6 +629,8 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [editing, setEditing] = useState<Ingredient | null>(null);
   const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
+  const cartItems = usePurchaseCartStore(s => s.items);
 
   // Conversion factor: how many "unit" are in 1 "subUnit"
   // unit ∈ {kg, litre, unite}, subUnit ∈ {kg, g, litre, ml, unite}
