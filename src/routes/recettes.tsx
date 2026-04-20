@@ -135,6 +135,38 @@ function RecettesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Auto-add low-stock ingredients to purchase cart (1 UVC each)
+  const cartItems = usePurchaseCartStore(s => s.items);
+  const addToCart = usePurchaseCartStore(s => s.addItem);
+  useEffect(() => {
+    if (loading || ingredients.length === 0) return;
+    const lowStock = ingredients.filter(
+      i => !i.is_super && (i as any).stock_min > 0 && Number((i as any).stock_quantity) <= Number((i as any).stock_min)
+    );
+    if (lowStock.length === 0) return;
+    const inCart = new Set(cartItems.map(c => c.ingredient.id));
+    let added = 0;
+    lowStock.forEach(ing => {
+      if (inCart.has(ing.id)) return;
+      addToCart({
+        id: ing.id,
+        name: ing.name,
+        unit: ing.unit,
+        cost_per_unit: Number(ing.cost_per_unit) || 0,
+        supplier: ing.supplier || null,
+        supplier_id: ing.supplier_id || null,
+        supplier_title: ing.supplier_ref?.title || null,
+        uvc: ing.uvc || null,
+        uvc_quantity: Number(ing.uvc_quantity) || 1,
+      }, 1);
+      added++;
+    });
+    if (added > 0) {
+      toast.info(`${added} ingrédient${added > 1 ? 's' : ''} en stock bas ajouté${added > 1 ? 's' : ''} au panier`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, ingredients]);
+
   // Auto-open edit for a specific product (from Ctrl+R in backoffice)
   const [autoEditHandled, setAutoEditHandled] = useState(false);
   useEffect(() => {
