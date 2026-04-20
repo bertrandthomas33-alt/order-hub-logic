@@ -605,6 +605,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      convert_to_base_unit: {
+        Args: { _base_unit: string; _from_unit: string; _qty: number }
+        Returns: number
+      }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
