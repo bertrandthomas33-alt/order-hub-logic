@@ -235,7 +235,14 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
                         <TableRow>
                           <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
                           {wh.clients.map((client) => (
-                            <TableHead key={client} className="text-center whitespace-nowrap">{client}</TableHead>
+                            <TableHead key={client} className="text-center align-bottom p-1 h-32">
+                              <div
+                                className="mx-auto font-medium text-foreground whitespace-nowrap"
+                                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                              >
+                                {client}
+                              </div>
+                            </TableHead>
                           ))}
                           <TableHead className="text-center font-bold bg-muted">Total</TableHead>
                         </TableRow>
