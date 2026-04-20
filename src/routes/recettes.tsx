@@ -389,7 +389,7 @@ function RecettesPage() {
 
           {/* ===== COMMANDES ===== */}
           <TabsContent value="commandes">
-            <CommandesTab recipes={recipes} ingredients={ingredients} />
+            <CommandesTab recipes={recipes} ingredients={ingredients} onRefresh={fetchData} />
           </TabsContent>
 
           {/* ===== STOCK ===== */}
@@ -1264,7 +1264,7 @@ function FournisseursTab() {
 }
 
 // ===== COMMANDES TAB =====
-function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients: Ingredient[] }) {
+function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; ingredients: Ingredient[]; onRefresh: () => void }) {
   // Aggregate all ingredient needs across recipes
   const ingredientNeeds = recipes.reduce<Record<string, { ingredient: Ingredient; totalQty: number; unit: string; recipeCount: number }>>((acc, recipe) => {
     recipe.recipe_ingredients?.forEach(ri => {
@@ -1398,6 +1398,7 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
       items.forEach(it => removeItem(it.ingredient.id));
       toast.success(`Commande ${supName} validée — stocks mis à jour`);
       loadPastOrders();
+      onRefresh();
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'Erreur validation commande');
