@@ -809,18 +809,27 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
         <div className="space-y-4">
           {sortedGroups.map(([key, group]) => {
             const collapsed = !!collapsedGroups[key];
+            const groupIngredientIds = new Set(group.items.map(i => i.id));
+            const pendingItems = cartItems.filter(ci => groupIngredientIds.has(ci.ingredient.id));
+            const pendingUvc = pendingItems.reduce((s, i) => s + i.quantity, 0);
             return (
               <div key={key} className="rounded-xl border border-border bg-card overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggleGroup(key)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <ChevronDown className={`h-4 w-4 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
-                    <span className="font-semibold text-foreground">{group.title}</span>
-                    <span className="text-xs text-muted-foreground">({group.items.length})</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ChevronDown className={`h-4 w-4 transition-transform shrink-0 ${collapsed ? '-rotate-90' : ''}`} />
+                    <span className="font-semibold text-foreground truncate">{group.title}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">({group.items.length})</span>
                   </div>
+                  {pendingItems.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium shrink-0">
+                      <ShoppingBasket className="h-3.5 w-3.5" />
+                      Commande en cours · {pendingItems.length} réf. · {Number(pendingUvc.toFixed(2))} UVC
+                    </span>
+                  )}
                 </button>
                 {!collapsed && (
                   <Table>
