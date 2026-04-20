@@ -841,7 +841,23 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                           <TableCell>{ing.unit}</TableCell>
                           <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                           <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
-                          <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
+                          <TableCell className="text-right">
+                            {(() => {
+                              const qty = Number(ing.stock_quantity ?? 0);
+                              const uvcQty = Number(ing.uvc_quantity) || 0;
+                              const uvcCount = uvcQty > 0 ? qty / uvcQty : 0;
+                              return (
+                                <div className="flex flex-col items-end leading-tight">
+                                  <span className="font-medium">{qty} {ing.unit}</span>
+                                  {uvcQty > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {Number(uvcCount.toFixed(3))} UVC
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell className="text-right">
                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                               {ing.active ? 'Actif' : 'Inactif'}
