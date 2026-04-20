@@ -702,6 +702,10 @@ export type Database = {
         Args: { _base_unit: string; _from_unit: string; _qty: number }
         Returns: number
       }
+      decrement_stock_from_orders: {
+        Args: { _order_ids: string[] }
+        Returns: undefined
+      }
       get_client_id_for_user: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
