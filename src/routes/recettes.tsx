@@ -1398,6 +1398,7 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
       items.forEach(it => removeItem(it.ingredient.id));
       toast.success(`Commande ${supName} validée — stocks mis à jour`);
       loadPastOrders();
+      onRefresh();
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'Erreur validation commande');
