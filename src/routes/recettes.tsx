@@ -1605,6 +1605,29 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
     }
   };
 
+  const handleUpdatePendingItemQty = async (po: PurchaseOrderRow, itemId: string, newQty: number) => {
+    if (!Number.isFinite(newQty) || newQty < 0) return;
+    const item = po.items.find(i => i.id === itemId);
+    if (!item || item.quantity_uvc === newQty) return;
+
+    // Optimistic update
+    const updatedItems = po.items.map(i => i.id === itemId ? { ...i, quantity_uvc: newQty } : i);
+    const newTotal = updatedItems.reduce((s, i) => s + i.quantity_uvc * i.uvc_quantity * i.cost_per_unit, 0);
+    setPendingOrders(prev => prev.map(o => o.id === po.id ? { ...o, items: updatedItems, total: newTotal } : o));
+
+    const { error: itErr } = await supabase
+      .from('purchase_order_items')
+      .update({ quantity_uvc: newQty })
+      .eq('id', itemId);
+    if (itErr) { toast.error(itErr.message); loadOrders(); return; }
+
+    const { error: totErr } = await supabase
+      .from('purchase_orders')
+      .update({ total: newTotal })
+      .eq('id', po.id);
+    if (totErr) { toast.error(totErr.message); loadOrders(); return; }
+  };
+
   const handleDeletePending = async (po: PurchaseOrderRow) => {
     if (!confirm(`Supprimer la commande en cours pour ${po.supplier_label} ?`)) return;
     const { error: itemsErr } = await supabase.from('purchase_order_items').delete().eq('purchase_order_id', po.id);
