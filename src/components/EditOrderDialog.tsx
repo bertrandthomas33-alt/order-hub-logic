@@ -69,7 +69,8 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
   }, [order]);
 
   const updateItemQuantity = (id: string, qty: number) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity: Math.max(0.1, qty) } : i)));
+    const intQty = Math.max(1, Math.floor(qty));
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity: intQty } : i)));
   };
 
   const toggleDeleteItem = (id: string) => {
