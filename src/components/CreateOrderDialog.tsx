@@ -196,8 +196,8 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
               )}
             </div>
             <div>
-              <Label>Date de livraison</Label>
-              <Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
+              <Label>Date de livraison *</Label>
+              <Input type="date" required value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
             </div>
           </div>
 
