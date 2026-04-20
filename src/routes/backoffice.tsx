@@ -11,6 +11,7 @@ import { EditClientDialog } from '@/components/EditClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { CreateProductDialog } from '@/components/CreateProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
+import { CreateOrderDialog } from '@/components/CreateOrderDialog';
 import { ProductionSheetDialog } from '@/components/ProductionSheetDialog';
 import { WarehousesManager } from '@/components/WarehousesManager';
 import { Button } from '@/components/ui/button';
@@ -155,7 +156,7 @@ function BackofficePage() {
         )}
 
 
-        {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} onRefresh={() => {
+        {activeTab === 'commandes' && <CommandesTable orders={orders} clients={clients} warehouses={warehouses} products={products} search={search} onRefresh={() => {
           supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name, category_id, categories(name)))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
         }} />}
         {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} warehouses={warehouses} search={search} onRefresh={() => {
@@ -181,8 +182,9 @@ function BackofficePage() {
   );
 }
 
-function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: string; onRefresh: () => void }) {
+function CommandesTable({ orders, clients, warehouses, products, search, onRefresh }: { orders: any[]; clients: any[]; warehouses: any[]; products: any[]; search: string; onRefresh: () => void }) {
   const [editOrder, setEditOrder] = useState<any | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [filterClient, setFilterClient] = useState<string>('all');
@@ -277,7 +279,13 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
             Réinitialiser
           </Button>
         )}
-        <span className="ml-auto text-xs text-muted-foreground">{filtered.length} commande(s)</span>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">{filtered.length} commande(s)</span>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Nouvelle commande
+          </Button>
+        </div>
       </div>
       {selected.size > 0 && (
         <div className="mb-4 flex items-center gap-3">
@@ -350,6 +358,14 @@ function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: 
         open={!!editOrder}
         onOpenChange={(open) => { if (!open) setEditOrder(null); }}
         onSaved={onRefresh}
+      />
+      <CreateOrderDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        clients={clients}
+        warehouses={warehouses}
+        products={products}
+        onCreated={onRefresh}
       />
     </>
   );
