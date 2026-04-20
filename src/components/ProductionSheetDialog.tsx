@@ -206,12 +206,20 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
       if (confirmOrders) {
         const allOrderIds = warehouseEntries.flatMap(([, wh]) => wh.orderIds);
         const uniqueIds = [...new Set(allOrderIds)];
+
+        // Décrémenter les stocks d'ingrédients selon les recettes
+        const { error: stockError } = await supabase.rpc(
+          'decrement_stock_from_orders' as any,
+          { _order_ids: uniqueIds }
+        );
+        if (stockError) throw stockError;
+
         const { error } = await supabase
           .from('orders')
           .update({ status: 'confirmed' as any })
           .in('id', uniqueIds);
         if (error) throw error;
-        toast.success(`${uniqueIds.length} commande(s) confirmée(s)`);
+        toast.success(`${uniqueIds.length} commande(s) confirmée(s) · stocks ingrédients mis à jour`);
         onRefresh();
       }
 
