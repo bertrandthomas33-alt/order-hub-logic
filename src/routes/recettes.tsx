@@ -2033,7 +2033,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                 className="inline-flex items-center gap-1 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-colors px-3 py-1 text-xs font-medium text-destructive"
                 title="Ajouter au panier"
               >
-                {ing.name} — {(ing as any).stock_quantity} {ing.unit}
+                {ing.name} — {Number(Number((ing as any).stock_quantity ?? 0).toFixed(2))} {ing.unit}
                 <Plus className="h-3 w-3" />
               </button>
             ))}
