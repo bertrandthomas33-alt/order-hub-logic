@@ -182,8 +182,9 @@ function BackofficePage() {
   );
 }
 
-function CommandesTable({ orders, search, onRefresh }: { orders: any[]; search: string; onRefresh: () => void }) {
+function CommandesTable({ orders, clients, warehouses, products, search, onRefresh }: { orders: any[]; clients: any[]; warehouses: any[]; products: any[]; search: string; onRefresh: () => void }) {
   const [editOrder, setEditOrder] = useState<any | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [filterClient, setFilterClient] = useState<string>('all');
