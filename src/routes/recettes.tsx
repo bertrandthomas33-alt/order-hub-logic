@@ -2096,7 +2096,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                               {ing.name}
                             </TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
-                            <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
+                            <TableCell className="text-right font-medium">{Number(qty.toFixed(2))} {ing.unit}</TableCell>
                             <TableCell className="text-right">
                               <Input
                                 type="number"
