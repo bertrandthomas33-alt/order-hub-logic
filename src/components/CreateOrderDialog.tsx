@@ -78,11 +78,25 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
+      if (p.active === false) return false;
       if (warehouseId && p.categories?.warehouses?.id !== warehouseId) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
   }, [products, warehouseId, search]);
+
+  const groupedProducts = useMemo(() => {
+    const groups = new Map<string, { name: string; items: Product[] }>();
+    for (const p of filteredProducts) {
+      const key = p.category_id || 'uncat';
+      const name = p.categories?.name || 'Sans catégorie';
+      if (!groups.has(key)) groups.set(key, { name, items: [] });
+      groups.get(key)!.items.push(p);
+    }
+    return Array.from(groups.values())
+      .map(g => ({ ...g, items: g.items.sort((a, b) => a.name.localeCompare(b.name)) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredProducts]);
 
   const total = lines.reduce((s, l) => s + l.quantity * (Number(l.product.price) || 0), 0);
 
