@@ -348,9 +348,9 @@ export function SuperIngredientsTab({ onRefresh }: { onRefresh: () => void }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="litre">litre</SelectItem>
-                    <SelectItem value="unite">unité</SelectItem>
+                    {UNIT_OPTIONS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -373,9 +373,9 @@ export function SuperIngredientsTab({ onRefresh }: { onRefresh: () => void }) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="litre">litre</SelectItem>
-                    <SelectItem value="unite">unité</SelectItem>
+                    {UNIT_OPTIONS.map((u) => (
+                      <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -409,7 +409,8 @@ export function SuperIngredientsTab({ onRefresh }: { onRefresh: () => void }) {
                 )}
                 {components.map((c, idx) => {
                   const ing = allIngredients.find((i) => i.id === c.component_ingredient_id);
-                  const cost = (ing?.cost_per_unit || 0) * (c.quantity || 0);
+                  const baseQty = convertToBaseUnit(c.quantity || 0, c.unit, ing?.unit);
+                  const cost = (ing?.cost_per_unit || 0) * baseQty;
                   return (
                     <div key={idx} className="flex items-center gap-2">
                       <Select
@@ -452,7 +453,23 @@ export function SuperIngredientsTab({ onRefresh }: { onRefresh: () => void }) {
                           setComponents(updated);
                         }}
                       />
-                      <span className="text-sm text-muted-foreground w-12">{c.unit}</span>
+                      <Select
+                        value={c.unit}
+                        onValueChange={(v) => {
+                          const updated = [...components];
+                          updated[idx] = { ...updated[idx], unit: v };
+                          setComponents(updated);
+                        }}
+                      >
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UNIT_OPTIONS.map((u) => (
+                            <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <span className="text-sm tabular-nums w-20 text-right">
                         {cost.toFixed(2)} €
                       </span>
