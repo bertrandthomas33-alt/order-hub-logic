@@ -56,7 +56,7 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
     }
   }, [open]);
 
-  // When client changes, fetch its allowed warehouses
+  // When client changes, fetch its associated warehouses (informational only)
   useEffect(() => {
     if (!clientId) {
       setAllowedWarehouseIds(null);
@@ -69,16 +69,11 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
       .then(({ data }) => {
         const ids = (data ?? []).map((r: any) => r.warehouse_id);
         setAllowedWarehouseIds(ids);
-        // If currently selected warehouse not allowed, reset
-        if (warehouseId && !ids.includes(warehouseId)) setWarehouseId('');
       });
   }, [clientId]);
 
-  const availableWarehouses = useMemo(() => {
-    if (!allowedWarehouseIds) return warehouses;
-    if (allowedWarehouseIds.length === 0) return [];
-    return warehouses.filter(w => allowedWarehouseIds.includes(w.id));
-  }, [warehouses, allowedWarehouseIds]);
+  // Admin can pick any active warehouse; we only show a hint when none are linked to the client.
+  const availableWarehouses = warehouses;
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
@@ -168,20 +163,22 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
             </div>
             <div>
               <Label>Entrepôt *</Label>
-              <Select value={warehouseId} onValueChange={setWarehouseId} disabled={!clientId || availableWarehouses.length === 0}>
+              <Select value={warehouseId} onValueChange={setWarehouseId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !clientId ? 'Sélectionnez un client d\'abord'
-                    : availableWarehouses.length === 0 ? 'Aucun entrepôt associé'
-                    : 'Choisir un entrepôt'
-                  } />
+                  <SelectValue placeholder="Choisir un entrepôt" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableWarehouses.map(w => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name}
+                      {allowedWarehouseIds && !allowedWarehouseIds.includes(w.id) ? ' (non associé)' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {clientId && allowedWarehouseIds && allowedWarehouseIds.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">Aucun entrepôt associé à ce client — vous pouvez quand même en choisir un.</p>
+              )}
             </div>
             <div>
               <Label>Date de livraison</Label>
