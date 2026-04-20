@@ -1264,7 +1264,7 @@ function FournisseursTab() {
 }
 
 // ===== COMMANDES TAB =====
-function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients: Ingredient[] }) {
+function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; ingredients: Ingredient[]; onRefresh: () => void }) {
   // Aggregate all ingredient needs across recipes
   const ingredientNeeds = recipes.reduce<Record<string, { ingredient: Ingredient; totalQty: number; unit: string; recipeCount: number }>>((acc, recipe) => {
     recipe.recipe_ingredients?.forEach(ri => {
