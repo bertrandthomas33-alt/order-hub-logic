@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse, Sparkles, ChevronDown, ShoppingBasket, Minus } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse, Sparkles, ChevronDown, ShoppingBasket, Minus, CheckCircle2, History } from 'lucide-react';
 import { usePurchaseCartStore, type PurchaseCartItem } from '@/lib/purchase-cart-store';
 import { SuperIngredientsTab } from '@/components/SuperIngredientsTab';
 import { Button } from '@/components/ui/button';
@@ -1306,6 +1306,106 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
     0
   );
 
+  // ----- Commandes passées -----
+  type PastOrder = {
+    id: string;
+    supplier_label: string;
+    total: number;
+    validated_at: string | null;
+    created_at: string;
+    items: Array<{
+      id: string;
+      ingredient_name: string;
+      uvc_label: string | null;
+      uvc_quantity: number;
+      quantity_uvc: number;
+      unit: string;
+      cost_per_unit: number;
+    }>;
+  };
+  const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
+  const [validating, setValidating] = useState<string | null>(null);
+  const [expandedPast, setExpandedPast] = useState<Record<string, boolean>>({});
+
+  const loadPastOrders = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select('id, supplier_label, total, validated_at, created_at, purchase_order_items(id, ingredient_name, uvc_label, uvc_quantity, quantity_uvc, unit, cost_per_unit)')
+      .eq('status', 'completed')
+      .order('validated_at', { ascending: false })
+      .limit(50);
+    if (error) {
+      toast.error('Erreur chargement historique');
+    } else if (data) {
+      setPastOrders(
+        data.map((o: any) => ({
+          id: o.id,
+          supplier_label: o.supplier_label,
+          total: Number(o.total) || 0,
+          validated_at: o.validated_at,
+          created_at: o.created_at,
+          items: (o.purchase_order_items || []).map((it: any) => ({
+            id: it.id,
+            ingredient_name: it.ingredient_name,
+            uvc_label: it.uvc_label,
+            uvc_quantity: Number(it.uvc_quantity) || 1,
+            quantity_uvc: Number(it.quantity_uvc) || 0,
+            unit: it.unit,
+            cost_per_unit: Number(it.cost_per_unit) || 0,
+          })),
+        }))
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPastOrders();
+  }, [loadPastOrders]);
+
+  const handleValidateSupplier = async (supName: string) => {
+    const items = cartBySupplier[supName];
+    if (!items || items.length === 0) return;
+    setValidating(supName);
+    try {
+      const supplierId = items[0].ingredient.supplier_id;
+      const supTotal = items.reduce(
+        (s, i) => s + i.quantity * (Number(i.ingredient.uvc_quantity) || 1) * (Number(i.ingredient.cost_per_unit) || 0),
+        0
+      );
+      const { data: order, error: orderErr } = await supabase
+        .from('purchase_orders')
+        .insert({ supplier_label: supName, supplier_id: supplierId, total: supTotal, status: 'pending' })
+        .select()
+        .single();
+      if (orderErr || !order) throw orderErr || new Error('Création commande échouée');
+
+      const itemsPayload = items.map(it => ({
+        purchase_order_id: order.id,
+        ingredient_id: it.ingredient.id,
+        ingredient_name: it.ingredient.name,
+        uvc_label: it.ingredient.uvc,
+        uvc_quantity: Number(it.ingredient.uvc_quantity) || 1,
+        quantity_uvc: it.quantity,
+        unit: it.ingredient.unit,
+        cost_per_unit: Number(it.ingredient.cost_per_unit) || 0,
+      }));
+      const { error: itemsErr } = await supabase.from('purchase_order_items').insert(itemsPayload);
+      if (itemsErr) throw itemsErr;
+
+      const { error: validErr } = await supabase.rpc('validate_purchase_order', { _order_id: order.id });
+      if (validErr) throw validErr;
+
+      items.forEach(it => removeItem(it.ingredient.id));
+      toast.success(`Commande ${supName} validée — stocks mis à jour`);
+      loadPastOrders();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Erreur validation commande');
+    } finally {
+      setValidating(null);
+    }
+  };
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1348,21 +1448,31 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
               );
               return (
                 <div key={supName} className="rounded-xl border border-border bg-card overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleSupplier(supName)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border hover:bg-muted/60 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-2">
+                  <div className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border gap-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleSupplier(supName)}
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity text-left flex-1 min-w-0"
+                    >
                       <ChevronDown
                         className={`h-4 w-4 text-muted-foreground transition-transform ${collapsedSuppliers[supName] ? '-rotate-90' : ''}`}
                       />
-                      <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold text-foreground">{supName}</span>
-                      <span className="text-xs text-muted-foreground">({items.length})</span>
+                      <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-foreground truncate">{supName}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">({items.length})</span>
+                    </button>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleValidateSupplier(supName)}
+                        disabled={validating === supName}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        {validating === supName ? 'Validation...' : 'Valider'}
+                      </Button>
                     </div>
-                    <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
-                  </button>
+                  </div>
                   {!collapsedSuppliers[supName] && (
                   <Table>
                     <TableHeader>
@@ -1421,6 +1531,81 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
         )}
       </section>
 
+      {/* ===== COMMANDES PASSÉES ===== */}
+      <section className="mb-10">
+        <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+          <History className="h-5 w-5 text-primary" />
+          Commandes passées
+          {pastOrders.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">({pastOrders.length})</span>
+          )}
+        </h3>
+
+        {pastOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
+            <History className="mb-3 h-10 w-10 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">Aucune commande passée</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Validez une commande en cours pour voir l'historique ici</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pastOrders.map(po => {
+              const isOpen = !!expandedPast[po.id];
+              const date = po.validated_at ? new Date(po.validated_at) : new Date(po.created_at);
+              return (
+                <div key={po.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPast(prev => ({ ...prev, [po.id]: !prev[po.id] }))}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left gap-3"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown
+                        className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? '' : '-rotate-90'}`}
+                      />
+                      <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-foreground truncate">{po.supplier_label}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">· {po.items.length} ligne{po.items.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground shrink-0">{po.total.toFixed(2)} €</span>
+                  </button>
+                  {isOpen && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ingrédient</TableHead>
+                          <TableHead>UVC</TableHead>
+                          <TableHead className="text-right">Qté UVC</TableHead>
+                          <TableHead className="text-right">Qté totale</TableHead>
+                          <TableHead className="text-right">Sous-total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {po.items.map(it => {
+                          const baseQty = it.quantity_uvc * it.uvc_quantity;
+                          const lineTotal = baseQty * it.cost_per_unit;
+                          return (
+                            <TableRow key={it.id}>
+                              <TableCell className="font-medium">{it.ingredient_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm">{it.uvc_label || '—'}</TableCell>
+                              <TableCell className="text-right">{it.quantity_uvc}</TableCell>
+                              <TableCell className="text-right">{baseQty.toFixed(2)} {it.unit}</TableCell>
+                              <TableCell className="text-right font-medium">{lineTotal.toFixed(2)} €</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </>
   );
 }
