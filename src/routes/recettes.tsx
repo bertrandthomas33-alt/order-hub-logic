@@ -3,7 +3,8 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse, Sparkles } from 'lucide-react';
+import { SuperIngredientsTab } from '@/components/SuperIngredientsTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,6 +51,9 @@ type Ingredient = {
   uvc: string | null;
   uvc_quantity: number;
   active: boolean;
+  is_super?: boolean;
+  yield_quantity?: number;
+  yield_unit?: string | null;
 };
 
 type SupplierOption = { id: string; title: string };
@@ -333,6 +337,7 @@ function RecettesPage() {
             <TabsList className="inline-flex w-max justify-start gap-1 mx-4 sm:mx-0">
               <TabsTrigger value="fiches" className="gap-2 whitespace-nowrap"><ChefHat className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Fiches Techniques</span><span className="xs:hidden sm:hidden">Fiches</span></TabsTrigger>
               <TabsTrigger value="ingredients" className="gap-2 whitespace-nowrap"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
+              <TabsTrigger value="super" className="gap-2 whitespace-nowrap"><Sparkles className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Super Ingrédients</span><span className="xs:hidden sm:hidden">Super</span></TabsTrigger>
               <TabsTrigger value="fournisseurs" className="gap-2 whitespace-nowrap"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
               <TabsTrigger value="commandes" className="gap-2 whitespace-nowrap"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
               <TabsTrigger value="stock" className="gap-2 whitespace-nowrap"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
@@ -362,11 +367,16 @@ function RecettesPage() {
           {/* ===== INGRÉDIENTS ===== */}
           <TabsContent value="ingredients">
             <IngredientsTab
-              ingredients={ingredients}
+              ingredients={ingredients.filter(i => !i.is_super)}
               onRefresh={fetchData}
               autoEditId={editIngredientId}
               onAutoEditConsumed={() => setEditIngredientId(null)}
             />
+          </TabsContent>
+
+          {/* ===== SUPER INGRÉDIENTS ===== */}
+          <TabsContent value="super">
+            <SuperIngredientsTab onRefresh={fetchData} />
           </TabsContent>
 
           {/* ===== FOURNISSEURS ===== */}
@@ -1724,7 +1734,7 @@ function RecipeEditView({
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
                       <SelectContent>
                         {allIngredients.map(i => (
-                          <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                          <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

@@ -127,6 +127,7 @@ export type Database = {
           cost_per_unit: number
           created_at: string
           id: string
+          is_super: boolean
           name: string
           stock_min: number
           stock_quantity: number
@@ -136,12 +137,15 @@ export type Database = {
           updated_at: string
           uvc: string | null
           uvc_quantity: number
+          yield_quantity: number
+          yield_unit: string | null
         }
         Insert: {
           active?: boolean
           cost_per_unit?: number
           created_at?: string
           id?: string
+          is_super?: boolean
           name: string
           stock_min?: number
           stock_quantity?: number
@@ -151,12 +155,15 @@ export type Database = {
           updated_at?: string
           uvc?: string | null
           uvc_quantity?: number
+          yield_quantity?: number
+          yield_unit?: string | null
         }
         Update: {
           active?: boolean
           cost_per_unit?: number
           created_at?: string
           id?: string
+          is_super?: boolean
           name?: string
           stock_min?: number
           stock_quantity?: number
@@ -166,6 +173,8 @@ export type Database = {
           updated_at?: string
           uvc?: string | null
           uvc_quantity?: number
+          yield_quantity?: number
+          yield_unit?: string | null
         }
         Relationships: [
           {
@@ -456,6 +465,48 @@ export type Database = {
           },
         ]
       }
+      super_ingredient_components: {
+        Row: {
+          component_ingredient_id: string
+          created_at: string
+          id: string
+          quantity: number
+          super_ingredient_id: string
+          unit: string
+        }
+        Insert: {
+          component_ingredient_id: string
+          created_at?: string
+          id?: string
+          quantity?: number
+          super_ingredient_id: string
+          unit?: string
+        }
+        Update: {
+          component_ingredient_id?: string
+          created_at?: string
+          id?: string
+          quantity?: number
+          super_ingredient_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "super_ingredient_components_component_ingredient_id_fkey"
+            columns: ["component_ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "super_ingredient_components_super_ingredient_id_fkey"
+            columns: ["super_ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           active: boolean
@@ -564,6 +615,10 @@ export type Database = {
       }
       recalc_product_cost_from_recipe: {
         Args: { _product_id: string }
+        Returns: undefined
+      }
+      recalc_super_ingredient_cost: {
+        Args: { _super_id: string }
         Returns: undefined
       }
     }
