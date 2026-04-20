@@ -374,6 +374,11 @@ function RecettesPage() {
             />
           </TabsContent>
 
+          {/* ===== SUPER INGRÉDIENTS ===== */}
+          <TabsContent value="super">
+            <SuperIngredientsTab onRefresh={fetchData} />
+          </TabsContent>
+
           {/* ===== FOURNISSEURS ===== */}
           <TabsContent value="fournisseurs">
             <FournisseursTab />
