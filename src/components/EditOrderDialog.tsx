@@ -194,10 +194,10 @@ export function EditOrderDialog({ order, open, onOpenChange, onSaved }: EditOrde
                           <span className="flex-1 truncate">{item.product_name}</span>
                           <Input
                             type="number"
-                            min={0.1}
-                            step={0.1}
+                            min={1}
+                            step={1}
                             value={item.quantity}
-                            onChange={(e) => updateItemQuantity(item.id, parseFloat(e.target.value) || 0.1)}
+                            onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value, 10) || 1)}
                             className="w-20 h-7 text-center"
                             disabled={item.deleted}
                           />
