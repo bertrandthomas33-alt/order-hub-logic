@@ -137,7 +137,8 @@ export function SuperIngredientsTab({ onRefresh }: { onRefresh: () => void }) {
     const yld = parseFloat(form.yield_quantity) || 1;
     const total = components.reduce((sum, c) => {
       const ing = allIngredients.find((i) => i.id === c.component_ingredient_id);
-      return sum + (ing?.cost_per_unit || 0) * (c.quantity || 0);
+      const baseQty = convertToBaseUnit(c.quantity || 0, c.unit, ing?.unit);
+      return sum + (ing?.cost_per_unit || 0) * baseQty;
     }, 0);
     return total / yld;
   })();
