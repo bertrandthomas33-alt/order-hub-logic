@@ -1719,6 +1719,12 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
     onRefresh();
   };
 
+  const handleUpdateMin = async (id: string, min: number) => {
+    const { error } = await supabase.from('ingredients').update({ stock_min: min } as any).eq('id', id);
+    if (error) { toast.error('Erreur mise à jour seuil'); return; }
+    onRefresh();
+  };
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1804,7 +1810,18 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                             </TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
                             <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">{min > 0 ? `${min} ${ing.unit}` : '—'}</TableCell>
+                            <TableCell className="text-right">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                className="h-8 w-24 ml-auto text-right"
+                                defaultValue={min}
+                                onBlur={e => {
+                                  const v = parseFloat(e.target.value) || 0;
+                                  if (v !== Number(min)) handleUpdateMin(ing.id, v);
+                                }}
+                              />
+                            </TableCell>
                             <TableCell className="text-right">
                               <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isLow ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
                                 {isLow ? 'Bas' : 'OK'}
