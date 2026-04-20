@@ -663,19 +663,29 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
     });
   }, []);
 
-  const [supplierFilter, setSupplierFilter] = useState<string>('all');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const filtered = ingredients.filter(i => {
     const q = searchTerm.toLowerCase();
-    const matchSearch = i.name.toLowerCase().includes(q) ||
+    return i.name.toLowerCase().includes(q) ||
       (i.supplier_ref?.title || i.supplier || '').toLowerCase().includes(q);
-    const matchSupplier = supplierFilter === 'all'
-      ? true
-      : supplierFilter === 'none'
-        ? !i.supplier_id
-        : i.supplier_id === supplierFilter;
-    return matchSearch && matchSupplier;
   });
+
+  // Group by supplier
+  const groupedBySupplier = filtered.reduce<Record<string, { title: string; items: Ingredient[] }>>((acc, ing) => {
+    const key = ing.supplier_ref?.id || ing.supplier_id || '__none__';
+    const title = ing.supplier_ref?.title || ing.supplier || '— Sans fournisseur —';
+    if (!acc[key]) acc[key] = { title, items: [] };
+    acc[key].items.push(ing);
+    return acc;
+  }, {});
+  const sortedGroups = Object.entries(groupedBySupplier).sort(([a, ga], [b, gb]) => {
+    if (a === '__none__') return 1;
+    if (b === '__none__') return -1;
+    return ga.title.localeCompare(gb.title);
+  });
+
+  const toggleGroup = (key: string) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const openCreate = () => {
     setEditing(null);
