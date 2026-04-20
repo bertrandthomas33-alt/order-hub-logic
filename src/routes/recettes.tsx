@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse, Sparkles } from 'lucide-react';
+import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse, Sparkles, ChevronDown } from 'lucide-react';
 import { SuperIngredientsTab } from '@/components/SuperIngredientsTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -663,19 +663,29 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
     });
   }, []);
 
-  const [supplierFilter, setSupplierFilter] = useState<string>('all');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const filtered = ingredients.filter(i => {
     const q = searchTerm.toLowerCase();
-    const matchSearch = i.name.toLowerCase().includes(q) ||
+    return i.name.toLowerCase().includes(q) ||
       (i.supplier_ref?.title || i.supplier || '').toLowerCase().includes(q);
-    const matchSupplier = supplierFilter === 'all'
-      ? true
-      : supplierFilter === 'none'
-        ? !i.supplier_id
-        : i.supplier_id === supplierFilter;
-    return matchSearch && matchSupplier;
   });
+
+  // Group by supplier
+  const groupedBySupplier = filtered.reduce<Record<string, { title: string; items: Ingredient[] }>>((acc, ing) => {
+    const key = ing.supplier_ref?.id || ing.supplier_id || '__none__';
+    const title = ing.supplier_ref?.title || ing.supplier || '— Sans fournisseur —';
+    if (!acc[key]) acc[key] = { title, items: [] };
+    acc[key].items.push(ing);
+    return acc;
+  }, {});
+  const sortedGroups = Object.entries(groupedBySupplier).sort(([a, ga], [b, gb]) => {
+    if (a === '__none__') return 1;
+    if (b === '__none__') return -1;
+    return ga.title.localeCompare(gb.title);
+  });
+
+  const toggleGroup = (key: string) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
 
   const openCreate = () => {
     setEditing(null);
@@ -785,16 +795,6 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
         </div>
-        <Select value={supplierFilter} onValueChange={setSupplierFilter}>
-          <SelectTrigger className="w-full sm:w-64"><SelectValue placeholder="Filtrer par fournisseur" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les fournisseurs</SelectItem>
-            <SelectItem value="none">— Sans fournisseur —</SelectItem>
-            {suppliers.map(s => (
-              <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {filtered.length === 0 ? (
@@ -803,44 +803,62 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
           <p className="text-lg font-medium text-muted-foreground">Aucun ingrédient</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Unité</TableHead>
-                <TableHead>UVC</TableHead>
-                <TableHead className="text-right">Coût / unité</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead>Fournisseur</TableHead>
-                <TableHead className="text-right">Statut</TableHead>
-                <TableHead className="w-20"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map(ing => (
-                <TableRow key={ing.id}>
-                  <TableCell className="font-medium">{ing.name}</TableCell>
-                  <TableCell>{ing.unit}</TableCell>
-                  <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
-                  <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
-                  <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
-                  <TableCell className="text-muted-foreground">{ing.supplier_ref?.title || ing.supplier || '—'}</TableCell>
-                  <TableCell className="text-right">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      {ing.active ? 'Actif' : 'Inactif'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditIng(ing)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(ing.id)}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-4">
+          {sortedGroups.map(([key, group]) => {
+            const collapsed = !!collapsedGroups[key];
+            return (
+              <div key={key} className="rounded-xl border border-border bg-card overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(key)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronDown className={`h-4 w-4 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+                    <span className="font-semibold text-foreground">{group.title}</span>
+                    <span className="text-xs text-muted-foreground">({group.items.length})</span>
+                  </div>
+                </button>
+                {!collapsed && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Unité</TableHead>
+                        <TableHead>UVC</TableHead>
+                        <TableHead className="text-right">Coût / unité</TableHead>
+                        <TableHead className="text-right">Stock</TableHead>
+                        <TableHead className="text-right">Statut</TableHead>
+                        <TableHead className="w-20"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {group.items.map(ing => (
+                        <TableRow key={ing.id}>
+                          <TableCell className="font-medium">{ing.name}</TableCell>
+                          <TableCell>{ing.unit}</TableCell>
+                          <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
+                          <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
+                          <TableCell className="text-right">{Number(ing.stock_quantity ?? 0)}</TableCell>
+                          <TableCell className="text-right">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                              {ing.active ? 'Actif' : 'Inactif'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditIng(ing)}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(ing.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
