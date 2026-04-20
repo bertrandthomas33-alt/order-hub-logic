@@ -1719,6 +1719,12 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
     onRefresh();
   };
 
+  const handleUpdateMin = async (id: string, min: number) => {
+    const { error } = await supabase.from('ingredients').update({ stock_min: min } as any).eq('id', id);
+    if (error) { toast.error('Erreur mise à jour seuil'); return; }
+    onRefresh();
+  };
+
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
