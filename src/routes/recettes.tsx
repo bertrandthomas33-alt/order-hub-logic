@@ -841,7 +841,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                         <TableHead className="text-right">Coût / unité</TableHead>
                         <TableHead className="text-right">Stock</TableHead>
                         <TableHead className="text-right">Statut</TableHead>
-                        <TableHead className="w-12 text-center">Panier</TableHead>
+                        <TableHead className="w-44 text-center">Commander</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
                     </TableHeader>
