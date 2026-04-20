@@ -337,6 +337,7 @@ function RecettesPage() {
             <TabsList className="inline-flex w-max justify-start gap-1 mx-4 sm:mx-0">
               <TabsTrigger value="fiches" className="gap-2 whitespace-nowrap"><ChefHat className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Fiches Techniques</span><span className="xs:hidden sm:hidden">Fiches</span></TabsTrigger>
               <TabsTrigger value="ingredients" className="gap-2 whitespace-nowrap"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
+              <TabsTrigger value="super" className="gap-2 whitespace-nowrap"><Sparkles className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Super Ingrédients</span><span className="xs:hidden sm:hidden">Super</span></TabsTrigger>
               <TabsTrigger value="fournisseurs" className="gap-2 whitespace-nowrap"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
               <TabsTrigger value="commandes" className="gap-2 whitespace-nowrap"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
               <TabsTrigger value="stock" className="gap-2 whitespace-nowrap"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
