@@ -2033,7 +2033,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                 className="inline-flex items-center gap-1 rounded-full bg-destructive/10 hover:bg-destructive/20 transition-colors px-3 py-1 text-xs font-medium text-destructive"
                 title="Ajouter au panier"
               >
-                {ing.name} — {(ing as any).stock_quantity} {ing.unit}
+                {ing.name} — {Number(Number((ing as any).stock_quantity ?? 0).toFixed(2))} {ing.unit}
                 <Plus className="h-3 w-3" />
               </button>
             ))}
@@ -2096,7 +2096,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                               {ing.name}
                             </TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
-                            <TableCell className="text-right font-medium">{qty} {ing.unit}</TableCell>
+                            <TableCell className="text-right font-medium">{Number(qty.toFixed(2))} {ing.unit}</TableCell>
                             <TableCell className="text-right">
                               <Input
                                 type="number"
@@ -2136,7 +2136,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                                     type="number"
                                     step="0.01"
                                     className="h-8 w-24"
-                                    value={qty}
+                                    value={Number(qty.toFixed(2))}
                                     onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
                                   />
                                 </div>
