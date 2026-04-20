@@ -51,6 +51,9 @@ type Ingredient = {
   uvc: string | null;
   uvc_quantity: number;
   active: boolean;
+  is_super?: boolean;
+  yield_quantity?: number;
+  yield_unit?: string | null;
 };
 
 type SupplierOption = { id: string; title: string };
