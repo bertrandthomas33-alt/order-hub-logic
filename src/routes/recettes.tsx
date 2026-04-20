@@ -1724,7 +1724,8 @@ function RecipeEditView({
             <div className="space-y-2">
               {recipeIngredients.map((ri, idx) => {
                 const ing = allIngredients.find(i => i.id === ri.ingredient_id);
-                const cost = (ing?.cost_per_unit || 0) * (ri.quantity || 0);
+                const baseQty = convertToBaseUnit(ri.quantity || 0, ri.unit, ing?.unit);
+                const cost = (ing?.cost_per_unit || 0) * baseQty;
                 return (
                   <div key={idx} className="flex items-center gap-2">
                     <Select value={ri.ingredient_id} onValueChange={v => {
@@ -1740,16 +1741,23 @@ function RecipeEditView({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input type="number" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
+                    <Input type="number" step="0.001" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
                       const updated = [...recipeIngredients];
                       updated[idx] = { ...updated[idx], quantity: parseFloat(e.target.value) || 0 };
                       setRecipeIngredients(updated);
                     }} />
-                    <Input className="w-20" value={ri.unit} onChange={e => {
+                    <Select value={ri.unit} onValueChange={v => {
                       const updated = [...recipeIngredients];
-                      updated[idx] = { ...updated[idx], unit: e.target.value };
+                      updated[idx] = { ...updated[idx], unit: v };
                       setRecipeIngredients(updated);
-                    }} />
+                    }}>
+                      <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {UNIT_OPTIONS.map(u => (
+                          <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <div className="w-24 text-right text-sm font-medium tabular-nums text-foreground">
                       {cost.toFixed(2)} €
                     </div>
@@ -1764,7 +1772,8 @@ function RecipeEditView({
                 <span className="w-24 text-right tabular-nums">
                   {recipeIngredients.reduce((sum, ri) => {
                     const ing = allIngredients.find(i => i.id === ri.ingredient_id);
-                    return sum + (ing?.cost_per_unit || 0) * (ri.quantity || 0);
+                    const baseQty = convertToBaseUnit(ri.quantity || 0, ri.unit, ing?.unit);
+                    return sum + (ing?.cost_per_unit || 0) * baseQty;
                   }, 0).toFixed(2)} €
                 </span>
                 <span className="w-8" />
