@@ -1531,6 +1531,81 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
         )}
       </section>
 
+      {/* ===== COMMANDES PASSÉES ===== */}
+      <section className="mb-10">
+        <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+          <History className="h-5 w-5 text-primary" />
+          Commandes passées
+          {pastOrders.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">({pastOrders.length})</span>
+          )}
+        </h3>
+
+        {pastOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
+            <History className="mb-3 h-10 w-10 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">Aucune commande passée</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Validez une commande en cours pour voir l'historique ici</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pastOrders.map(po => {
+              const isOpen = !!expandedPast[po.id];
+              const date = po.validated_at ? new Date(po.validated_at) : new Date(po.created_at);
+              return (
+                <div key={po.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPast(prev => ({ ...prev, [po.id]: !prev[po.id] }))}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left gap-3"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ChevronDown
+                        className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? '' : '-rotate-90'}`}
+                      />
+                      <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-foreground truncate">{po.supplier_label}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">· {po.items.length} ligne{po.items.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <span className="text-sm font-medium text-foreground shrink-0">{po.total.toFixed(2)} €</span>
+                  </button>
+                  {isOpen && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ingrédient</TableHead>
+                          <TableHead>UVC</TableHead>
+                          <TableHead className="text-right">Qté UVC</TableHead>
+                          <TableHead className="text-right">Qté totale</TableHead>
+                          <TableHead className="text-right">Sous-total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {po.items.map(it => {
+                          const baseQty = it.quantity_uvc * it.uvc_quantity;
+                          const lineTotal = baseQty * it.cost_per_unit;
+                          return (
+                            <TableRow key={it.id}>
+                              <TableCell className="font-medium">{it.ingredient_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm">{it.uvc_label || '—'}</TableCell>
+                              <TableCell className="text-right">{it.quantity_uvc}</TableCell>
+                              <TableCell className="text-right">{baseQty.toFixed(2)} {it.unit}</TableCell>
+                              <TableCell className="text-right font-medium">{lineTotal.toFixed(2)} €</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </>
   );
 }
