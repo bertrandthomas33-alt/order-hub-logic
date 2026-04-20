@@ -3,7 +3,7 @@
 
 const norm = (u: string | null | undefined) => {
   const x = (u || '').toLowerCase().trim();
-  if (x === 'l') return 'litre';
+  if (['l', 'liter', 'liters', 'litres'].includes(x)) return 'litre';
   if (['piece', 'pièce', 'pcs', 'u'].includes(x)) return 'unite';
   return x;
 };
