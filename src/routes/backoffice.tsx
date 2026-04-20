@@ -156,7 +156,7 @@ function BackofficePage() {
         )}
 
 
-        {activeTab === 'commandes' && <CommandesTable orders={orders} search={search} onRefresh={() => {
+        {activeTab === 'commandes' && <CommandesTable orders={orders} clients={clients} warehouses={warehouses} products={products} search={search} onRefresh={() => {
           supabase.from('orders').select('*, clients(name), warehouses(name), order_items(*, products(name, category_id, categories(name)))').order('created_at', { ascending: false }).then(r => setOrders(r.data ?? []));
         }} />}
         {activeTab === 'produits' && <ProduitsTable products={products} categories={categories} warehouses={warehouses} search={search} onRefresh={() => {
