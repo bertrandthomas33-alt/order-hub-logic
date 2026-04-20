@@ -129,8 +129,7 @@ export function generatePurchaseOrderPdf(order: PdfOrder): jsPDF {
   });
 
   // ---- Total ----
-  // @ts-expect-error - lastAutoTable is added by autotable plugin
-  const finalY = (doc as any).lastAutoTable.finalY || y + 50;
+  const finalY = (doc as any).lastAutoTable?.finalY || y + 50;
   const totalY = finalY + 8;
   doc.setDrawColor(60, 80, 60);
   doc.setLineWidth(0.5);
