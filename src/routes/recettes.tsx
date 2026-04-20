@@ -389,7 +389,7 @@ function RecettesPage() {
 
           {/* ===== COMMANDES ===== */}
           <TabsContent value="commandes">
-            <CommandesTab recipes={recipes} ingredients={ingredients} />
+            <CommandesTab recipes={recipes} ingredients={ingredients} onRefresh={fetchData} />
           </TabsContent>
 
           {/* ===== STOCK ===== */}
