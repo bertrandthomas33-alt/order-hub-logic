@@ -19,6 +19,7 @@ type Product = {
   price: number;
   unit: string;
   category_id: string;
+  active?: boolean;
   categories?: { name: string; warehouses?: { id: string; name: string } } | null;
 };
 
