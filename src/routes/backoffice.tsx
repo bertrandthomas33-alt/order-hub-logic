@@ -359,6 +359,14 @@ function CommandesTable({ orders, clients, warehouses, products, search, onRefre
         onOpenChange={(open) => { if (!open) setEditOrder(null); }}
         onSaved={onRefresh}
       />
+      <CreateOrderDialog
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        clients={clients}
+        warehouses={warehouses}
+        products={products}
+        onCreated={onRefresh}
+      />
     </>
   );
 }
