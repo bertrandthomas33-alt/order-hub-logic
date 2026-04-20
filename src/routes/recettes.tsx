@@ -367,7 +367,7 @@ function RecettesPage() {
           {/* ===== INGRÉDIENTS ===== */}
           <TabsContent value="ingredients">
             <IngredientsTab
-              ingredients={ingredients}
+              ingredients={ingredients.filter(i => !i.is_super)}
               onRefresh={fetchData}
               autoEditId={editIngredientId}
               onAutoEditConsumed={() => setEditIngredientId(null)}
