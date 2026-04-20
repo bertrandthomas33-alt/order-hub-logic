@@ -119,6 +119,7 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
   const handleSubmit = async () => {
     if (!clientId) { toast.error('Sélectionnez un client'); return; }
     if (!warehouseId) { toast.error('Sélectionnez un entrepôt'); return; }
+    if (!deliveryDate) { toast.error('Sélectionnez une date de livraison'); return; }
     if (lines.length === 0) { toast.error('Ajoutez au moins un produit'); return; }
     setSubmitting(true);
     try {
@@ -196,8 +197,8 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
               )}
             </div>
             <div>
-              <Label>Date de livraison</Label>
-              <Input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
+              <Label>Date de livraison *</Label>
+              <Input type="date" required value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
             </div>
           </div>
 
