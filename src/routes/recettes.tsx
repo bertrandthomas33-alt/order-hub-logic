@@ -1397,66 +1397,123 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
     0
   );
 
-  // ----- Commandes passées -----
-  type PastOrder = {
+  // ----- Commandes en cours (pending) & passées (completed) -----
+  type PoItem = {
+    id: string;
+    ingredient_name: string;
+    uvc_label: string | null;
+    uvc_quantity: number;
+    quantity_uvc: number;
+    unit: string;
+    cost_per_unit: number;
+  };
+  type SupplierFull = {
+    id: string;
+    title: string;
+    name: string | null;
+    address: string | null;
+    zip: string | null;
+    city: string | null;
+    country: string | null;
+    email: string | null;
+    phone: string | null;
+    mobile: string | null;
+  };
+  type PurchaseOrderRow = {
     id: string;
     supplier_label: string;
+    supplier_id: string | null;
     total: number;
+    status: 'pending' | 'completed';
     validated_at: string | null;
     created_at: string;
-    items: Array<{
-      id: string;
-      ingredient_name: string;
-      uvc_label: string | null;
-      uvc_quantity: number;
-      quantity_uvc: number;
-      unit: string;
-      cost_per_unit: number;
-    }>;
+    notes: string | null;
+    items: PoItem[];
+    supplier?: SupplierFull | null;
   };
-  const [pastOrders, setPastOrders] = useState<PastOrder[]>([]);
-  const [validating, setValidating] = useState<string | null>(null);
-  const [expandedPast, setExpandedPast] = useState<Record<string, boolean>>({});
 
-  const loadPastOrders = useCallback(async () => {
+  const [pendingOrders, setPendingOrders] = useState<PurchaseOrderRow[]>([]);
+  const [pastOrders, setPastOrders] = useState<PurchaseOrderRow[]>([]);
+  const [submitting, setSubmitting] = useState<string | null>(null);
+  const [receiving, setReceiving] = useState<string | null>(null);
+  const [expandedPast, setExpandedPast] = useState<Record<string, boolean>>({});
+  const [expandedPending, setExpandedPending] = useState<Record<string, boolean>>({});
+
+  const loadOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('purchase_orders')
-      .select('id, supplier_label, total, validated_at, created_at, purchase_order_items(id, ingredient_name, uvc_label, uvc_quantity, quantity_uvc, unit, cost_per_unit)')
-      .eq('status', 'completed')
-      .order('validated_at', { ascending: false })
-      .limit(50);
+      .select('id, supplier_label, supplier_id, total, status, validated_at, created_at, notes, purchase_order_items(id, ingredient_name, uvc_label, uvc_quantity, quantity_uvc, unit, cost_per_unit)')
+      .order('created_at', { ascending: false })
+      .limit(100);
     if (error) {
-      toast.error('Erreur chargement historique');
-    } else if (data) {
-      setPastOrders(
-        data.map((o: any) => ({
-          id: o.id,
-          supplier_label: o.supplier_label,
-          total: Number(o.total) || 0,
-          validated_at: o.validated_at,
-          created_at: o.created_at,
-          items: (o.purchase_order_items || []).map((it: any) => ({
-            id: it.id,
-            ingredient_name: it.ingredient_name,
-            uvc_label: it.uvc_label,
-            uvc_quantity: Number(it.uvc_quantity) || 1,
-            quantity_uvc: Number(it.quantity_uvc) || 0,
-            unit: it.unit,
-            cost_per_unit: Number(it.cost_per_unit) || 0,
-          })),
-        }))
-      );
+      toast.error('Erreur chargement commandes');
+      return;
     }
+    if (!data) return;
+
+    // Récupérer infos fournisseurs (pour PDF)
+    const supplierIds = Array.from(new Set(data.map((o: any) => o.supplier_id).filter(Boolean))) as string[];
+    let suppliersMap = new Map<string, SupplierFull>();
+    if (supplierIds.length > 0) {
+      const { data: sups } = await supabase
+        .from('suppliers')
+        .select('id, title, name, address, zip, city, country, email, phone, mobile')
+        .in('id', supplierIds);
+      sups?.forEach((s: any) => suppliersMap.set(s.id, s));
+    }
+
+    const mapped: PurchaseOrderRow[] = data.map((o: any) => ({
+      id: o.id,
+      supplier_label: o.supplier_label,
+      supplier_id: o.supplier_id,
+      total: Number(o.total) || 0,
+      status: o.status,
+      validated_at: o.validated_at,
+      created_at: o.created_at,
+      notes: o.notes,
+      supplier: o.supplier_id ? suppliersMap.get(o.supplier_id) || null : null,
+      items: (o.purchase_order_items || []).map((it: any) => ({
+        id: it.id,
+        ingredient_name: it.ingredient_name,
+        uvc_label: it.uvc_label,
+        uvc_quantity: Number(it.uvc_quantity) || 1,
+        quantity_uvc: Number(it.quantity_uvc) || 0,
+        unit: it.unit,
+        cost_per_unit: Number(it.cost_per_unit) || 0,
+      })),
+    }));
+
+    setPendingOrders(mapped.filter(o => o.status === 'pending'));
+    setPastOrders(mapped.filter(o => o.status === 'completed'));
   }, []);
 
   useEffect(() => {
-    loadPastOrders();
-  }, [loadPastOrders]);
+    loadOrders();
+  }, [loadOrders]);
 
-  const handleValidateSupplier = async (supName: string) => {
+  const buildPdfOrder = (po: PurchaseOrderRow): PdfOrder => ({
+    id: po.id,
+    date: new Date(po.created_at),
+    supplier: {
+      title: po.supplier?.title || po.supplier_label,
+      name: po.supplier?.name,
+      address: po.supplier?.address,
+      zip: po.supplier?.zip,
+      city: po.supplier?.city,
+      country: po.supplier?.country,
+      email: po.supplier?.email,
+      phone: po.supplier?.phone,
+      mobile: po.supplier?.mobile,
+    },
+    items: po.items,
+    total: po.total,
+    notes: po.notes,
+  });
+
+  const handleSubmitSupplier = async (supName: string) => {
     const items = cartBySupplier[supName];
     if (!items || items.length === 0) return;
-    setValidating(supName);
+    setSubmitting(supName);
     try {
       const supplierId = items[0].ingredient.supplier_id;
       const supTotal = items.reduce(
@@ -1483,19 +1540,79 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
       const { error: itemsErr } = await supabase.from('purchase_order_items').insert(itemsPayload);
       if (itemsErr) throw itemsErr;
 
-      const { error: validErr } = await supabase.rpc('validate_purchase_order', { _order_id: order.id });
-      if (validErr) throw validErr;
+      // Récupérer infos fournisseur pour le PDF
+      let supplierFull: SupplierFull | null = null;
+      if (supplierId) {
+        const { data: sup } = await supabase
+          .from('suppliers')
+          .select('id, title, name, address, zip, city, country, email, phone, mobile')
+          .eq('id', supplierId)
+          .maybeSingle();
+        supplierFull = (sup as SupplierFull | null) || null;
+      }
+
+      // Générer + télécharger PDF
+      downloadPurchaseOrderPdf({
+        id: order.id,
+        date: new Date(),
+        supplier: {
+          title: supplierFull?.title || supName,
+          name: supplierFull?.name,
+          address: supplierFull?.address,
+          zip: supplierFull?.zip,
+          city: supplierFull?.city,
+          country: supplierFull?.country,
+          email: supplierFull?.email,
+          phone: supplierFull?.phone,
+          mobile: supplierFull?.mobile,
+        },
+        items: itemsPayload.map(p => ({
+          id: '',
+          ingredient_name: p.ingredient_name,
+          uvc_label: p.uvc_label,
+          uvc_quantity: p.uvc_quantity,
+          quantity_uvc: p.quantity_uvc,
+          unit: p.unit,
+          cost_per_unit: p.cost_per_unit,
+        })),
+        total: supTotal,
+      });
 
       items.forEach(it => removeItem(it.ingredient.id));
-      toast.success(`Commande ${supName} validée — stocks mis à jour`);
-      loadPastOrders();
+      toast.success(`Commande ${supName} soumise — PDF généré`);
+      loadOrders();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || 'Erreur soumission commande');
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
+  const handleReceiveOrder = async (po: PurchaseOrderRow) => {
+    setReceiving(po.id);
+    try {
+      const { error } = await supabase.rpc('validate_purchase_order', { _order_id: po.id });
+      if (error) throw error;
+      toast.success(`Commande ${po.supplier_label} réceptionnée — stocks mis à jour`);
+      loadOrders();
       onRefresh();
     } catch (e: any) {
       console.error(e);
-      toast.error(e.message || 'Erreur validation commande');
+      toast.error(e.message || 'Erreur réception commande');
     } finally {
-      setValidating(null);
+      setReceiving(null);
     }
+  };
+
+  const handleDeletePending = async (po: PurchaseOrderRow) => {
+    if (!confirm(`Supprimer la commande en cours pour ${po.supplier_label} ?`)) return;
+    const { error: itemsErr } = await supabase.from('purchase_order_items').delete().eq('purchase_order_id', po.id);
+    if (itemsErr) { toast.error(itemsErr.message); return; }
+    const { error } = await supabase.from('purchase_orders').delete().eq('id', po.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Commande supprimée');
+    loadOrders();
   };
 
   return (
@@ -1503,22 +1620,22 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-heading text-xl font-bold text-foreground">Commandes fournisseurs</h2>
-          <p className="text-sm text-muted-foreground">Commande en cours et récapitulatif des besoins basé sur vos fiches techniques</p>
+          <p className="text-sm text-muted-foreground">Panier → soumission (PDF) → réception (mise à jour des stocks)</p>
         </div>
       </div>
 
-      {/* ===== COMMANDE EN COURS (panier manuel) ===== */}
+      {/* ===== PANIER (avant soumission) ===== */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2">
             <ShoppingBasket className="h-5 w-5 text-primary" />
-            Commande en cours
+            Panier
             {cartItems.length > 0 && (
               <span className="text-xs font-normal text-muted-foreground">({cartItems.length} ingrédient{cartItems.length > 1 ? 's' : ''})</span>
             )}
           </h3>
           {cartItems.length > 0 && (
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { clearCart(); toast.success('Commande vidée'); }}>
+            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { clearCart(); toast.success('Panier vidé'); }}>
               <Trash2 className="h-4 w-4 mr-1" />Vider
             </Button>
           )}
@@ -1527,8 +1644,8 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
         {cartItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
             <ShoppingBasket className="mb-3 h-10 w-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">Aucun ingrédient dans la commande</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">Ajoutez-en depuis l'onglet Ingrédients via le bouton panier</p>
+            <p className="text-sm text-muted-foreground">Panier vide</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Ajoutez des ingrédients depuis l'onglet Ingrédients via le bouton panier</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -1557,11 +1674,11 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
                       <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
                       <Button
                         size="sm"
-                        onClick={() => handleValidateSupplier(supName)}
-                        disabled={validating === supName}
+                        onClick={() => handleSubmitSupplier(supName)}
+                        disabled={submitting === supName}
                       >
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        {validating === supName ? 'Validation...' : 'Valider'}
+                        <Send className="h-4 w-4 mr-1" />
+                        {submitting === supName ? 'Soumission...' : 'Soumettre'}
                       </Button>
                     </div>
                   </div>
@@ -1616,9 +1733,96 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
               );
             })}
             <div className="flex items-center justify-end gap-3 px-4 py-3 rounded-xl bg-primary/5 border border-primary/20">
-              <span className="text-sm text-muted-foreground">Total commande :</span>
+              <span className="text-sm text-muted-foreground">Total panier :</span>
               <span className="text-lg font-bold text-foreground">{cartTotal.toFixed(2)} €</span>
             </div>
+          </div>
+        )}
+      </section>
+
+      {/* ===== COMMANDES EN COURS (pending) ===== */}
+      <section className="mb-10">
+        <h3 className="font-heading text-lg font-semibold text-foreground flex items-center gap-2 mb-3">
+          <ShoppingCart className="h-5 w-5 text-primary" />
+          Commandes en cours
+          {pendingOrders.length > 0 && (
+            <span className="text-xs font-normal text-muted-foreground">({pendingOrders.length})</span>
+          )}
+        </h3>
+
+        {pendingOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
+            <ShoppingCart className="mb-3 h-10 w-10 text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground">Aucune commande en cours</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Soumettez votre panier pour créer une commande</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {pendingOrders.map(po => {
+              const isOpen = !!expandedPending[po.id];
+              const date = new Date(po.created_at);
+              return (
+                <div key={po.id} className="rounded-xl border border-amber-200 bg-amber-50/30 overflow-hidden">
+                  <div className="w-full flex flex-wrap items-center justify-between px-4 py-3 bg-amber-100/40 border-b border-amber-200 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPending(prev => ({ ...prev, [po.id]: !prev[po.id] }))}
+                      className="flex items-center gap-2 text-left flex-1 min-w-0 hover:opacity-80 transition-opacity"
+                    >
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? '' : '-rotate-90'}`} />
+                      <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-foreground truncate">{po.supplier_label}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">· {po.items.length} ligne{po.items.length > 1 ? 's' : ''}</span>
+                      <span className="text-xs font-medium text-amber-700 shrink-0 px-2 py-0.5 rounded-full bg-amber-200/60">En attente</span>
+                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-medium text-foreground">{po.total.toFixed(2)} €</span>
+                      <Button variant="outline" size="sm" onClick={() => downloadPurchaseOrderPdf(buildPdfOrder(po))}>
+                        <FileDown className="h-4 w-4 mr-1" />PDF
+                      </Button>
+                      <Button size="sm" onClick={() => handleReceiveOrder(po)} disabled={receiving === po.id}>
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        {receiving === po.id ? 'Réception...' : 'Réceptionner'}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeletePending(po)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {isOpen && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ingrédient</TableHead>
+                          <TableHead>UVC</TableHead>
+                          <TableHead className="text-right">Qté UVC</TableHead>
+                          <TableHead className="text-right">Qté totale</TableHead>
+                          <TableHead className="text-right">Sous-total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {po.items.map(it => {
+                          const baseQty = it.quantity_uvc * it.uvc_quantity;
+                          const lineTotal = baseQty * it.cost_per_unit;
+                          return (
+                            <TableRow key={it.id}>
+                              <TableCell className="font-medium">{it.ingredient_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm">{it.uvc_label || '—'}</TableCell>
+                              <TableCell className="text-right">{it.quantity_uvc}</TableCell>
+                              <TableCell className="text-right">{baseQty.toFixed(2)} {it.unit}</TableCell>
+                              <TableCell className="text-right font-medium">{lineTotal.toFixed(2)} €</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -1637,7 +1841,7 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-12">
             <History className="mb-3 h-10 w-10 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">Aucune commande passée</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">Validez une commande en cours pour voir l'historique ici</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">Réceptionnez une commande en cours pour voir l'historique ici</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1646,12 +1850,12 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
               const date = po.validated_at ? new Date(po.validated_at) : new Date(po.created_at);
               return (
                 <div key={po.id} className="rounded-xl border border-border bg-card overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedPast(prev => ({ ...prev, [po.id]: !prev[po.id] }))}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors text-left gap-3"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPast(prev => ({ ...prev, [po.id]: !prev[po.id] }))}
+                      className="flex items-center gap-2 min-w-0 text-left flex-1"
+                    >
                       <ChevronDown
                         className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? '' : '-rotate-90'}`}
                       />
@@ -1661,9 +1865,14 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
                         {date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
                       </span>
                       <span className="text-xs text-muted-foreground shrink-0">· {po.items.length} ligne{po.items.length > 1 ? 's' : ''}</span>
+                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-medium text-foreground">{po.total.toFixed(2)} €</span>
+                      <Button variant="outline" size="sm" onClick={() => downloadPurchaseOrderPdf(buildPdfOrder(po))}>
+                        <FileDown className="h-4 w-4 mr-1" />PDF
+                      </Button>
                     </div>
-                    <span className="text-sm font-medium text-foreground shrink-0">{po.total.toFixed(2)} €</span>
-                  </button>
+                  </div>
                   {isOpen && (
                     <Table>
                       <TableHeader>
