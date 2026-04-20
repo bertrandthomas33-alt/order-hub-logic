@@ -155,7 +155,7 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         body,
         theme: 'grid',
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [56, 102, 65], textColor: 255, fontSize: 8, halign: 'center', valign: 'bottom', minCellHeight: 35 },
+        headStyles: { fillColor: [56, 102, 65], textColor: 255, fontSize: 8, halign: 'center', valign: 'bottom', minCellHeight: 28 },
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 40 },
           [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240] },
@@ -168,25 +168,25 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
             data.cell.styles.fontStyle = 'bold';
             data.cell.styles.fontSize = 9;
           }
-          // Reserve narrow columns for vertical client headers
+          // Reserve narrow columns for rotated client headers
           if (data.section === 'head' && data.column.index > 0 && data.column.index < headers.length - 1) {
-            data.cell.styles.cellWidth = 8;
+            data.cell.styles.cellWidth = 10;
             data.cell.text = [''];
           }
         },
         didDrawCell: (data: any) => {
-          // Draw client names rotated 90° in head cells
+          // Draw client names rotated 45° in head cells
           if (
             data.section === 'head' &&
             data.column.index > 0 &&
             data.column.index < headers.length - 1
           ) {
             const label = String(headers[data.column.index] ?? '');
-            const x = data.cell.x + data.cell.width / 2 + 2;
+            const x = data.cell.x + data.cell.width / 2;
             const y = data.cell.y + data.cell.height - 2;
             doc.setTextColor(255);
             doc.setFontSize(8);
-            doc.text(label, x, y, { angle: 90, align: 'left' });
+            doc.text(label, x, y, { angle: 45, align: 'left' });
           }
         },
       });
@@ -255,12 +255,14 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
                         <TableRow>
                           <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
                           {wh.clients.map((client) => (
-                            <TableHead key={client} className="text-center align-bottom p-1 h-32">
-                              <div
-                                className="mx-auto font-medium text-foreground whitespace-nowrap"
-                                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-                              >
-                                {client}
+                            <TableHead key={client} className="text-center align-bottom p-1 h-28">
+                              <div className="relative h-full w-8 mx-auto">
+                                <span
+                                  className="absolute bottom-1 left-1/2 origin-bottom-left font-medium text-foreground whitespace-nowrap"
+                                  style={{ transform: 'rotate(-45deg)' }}
+                                >
+                                  {client}
+                                </span>
                               </div>
                             </TableHead>
                           ))}
