@@ -279,7 +279,13 @@ function CommandesTable({ orders, clients, warehouses, products, search, onRefre
             Réinitialiser
           </Button>
         )}
-        <span className="ml-auto text-xs text-muted-foreground">{filtered.length} commande(s)</span>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-muted-foreground">{filtered.length} commande(s)</span>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Nouvelle commande
+          </Button>
+        </div>
       </div>
       {selected.size > 0 && (
         <div className="mb-4 flex items-center gap-3">
