@@ -17,6 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { convertToBaseUnit, UNIT_OPTIONS } from '@/lib/units';
 
 type SimpleIngredient = {
   id: string;
