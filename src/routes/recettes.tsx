@@ -1947,6 +1947,7 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
 // ===== STOCK TAB =====
 function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: Ingredient[]; onRefresh: () => void; onOpenIngredient?: (id: string) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const addToCart = usePurchaseCartStore(s => s.addItem);
 
   const filtered = ingredients.filter(i =>
     i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
