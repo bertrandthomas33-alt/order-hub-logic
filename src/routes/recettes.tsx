@@ -931,7 +931,41 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
               </div>
               <div>
                 <label className="text-sm text-muted-foreground">Stock</label>
-                <Input type="number" step="0.01" value={form.stock_quantity} onChange={e => setForm({ ...form, stock_quantity: e.target.value })} />
+                {(() => {
+                  const uvcQty = parseFloat(form.uvc_pieces) * parseFloat(form.uvc_piece_qty);
+                  const validUvc = isFinite(uvcQty) && uvcQty > 0;
+                  const stockBase = parseFloat(form.stock_quantity) || 0;
+                  const stockUvc = validUvc ? stockBase / uvcQty : 0;
+                  return (
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder={form.unit}
+                          value={form.stock_quantity}
+                          onChange={e => setForm({ ...form, stock_quantity: e.target.value })}
+                        />
+                        <span className="text-[10px] text-muted-foreground">en {form.unit}</span>
+                      </div>
+                      <span className="text-muted-foreground text-xs pb-5">ou</span>
+                      <div className="flex-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="UVC"
+                          disabled={!validUvc}
+                          value={validUvc ? Number(stockUvc.toFixed(3)) : ''}
+                          onChange={e => {
+                            const v = parseFloat(e.target.value) || 0;
+                            setForm({ ...form, stock_quantity: String(v * uvcQty) });
+                          }}
+                        />
+                        <span className="text-[10px] text-muted-foreground">en UVC</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
             <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
