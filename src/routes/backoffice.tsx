@@ -11,6 +11,7 @@ import { EditClientDialog } from '@/components/EditClientDialog';
 import { EditProductDialog } from '@/components/EditProductDialog';
 import { CreateProductDialog } from '@/components/CreateProductDialog';
 import { EditOrderDialog } from '@/components/EditOrderDialog';
+import { CreateOrderDialog } from '@/components/CreateOrderDialog';
 import { ProductionSheetDialog } from '@/components/ProductionSheetDialog';
 import { WarehousesManager } from '@/components/WarehousesManager';
 import { Button } from '@/components/ui/button';
