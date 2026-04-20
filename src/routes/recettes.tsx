@@ -2136,7 +2136,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                                     type="number"
                                     step="0.01"
                                     className="h-8 w-24"
-                                    value={qty}
+                                    value={Number(qty.toFixed(2))}
                                     onChange={e => handleUpdateStock(ing.id, parseFloat(e.target.value) || 0)}
                                   />
                                 </div>
