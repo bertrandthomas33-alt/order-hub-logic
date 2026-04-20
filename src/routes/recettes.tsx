@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Navigate } from '@tanstack/react-router';
 import { ImageUpload } from '@/components/ImageUpload';
+import { convertToBaseUnit, UNIT_OPTIONS } from '@/lib/units';
 
 type RecettesSearch = { productId?: string };
 
@@ -171,7 +172,8 @@ function RecettesPage() {
   const totalCost = (recipe: Recipe) => {
     return recipe.recipe_ingredients?.reduce((sum, ri) => {
       const cost = ri.ingredient?.cost_per_unit || 0;
-      return sum + ri.quantity * cost;
+      const baseQty = convertToBaseUnit(ri.quantity, ri.unit, ri.ingredient?.unit);
+      return sum + baseQty * cost;
     }, 0) || 0;
   };
 
@@ -1571,7 +1573,7 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
                   <TableRow key={ri.id}>
                     <TableCell className="font-medium">{ri.ingredient?.name}</TableCell>
                     <TableCell className="text-right">{ri.quantity} {ri.unit}</TableCell>
-                    <TableCell className="text-right">{((ri.ingredient?.cost_per_unit || 0) * ri.quantity).toFixed(2)} €</TableCell>
+                    <TableCell className="text-right">{((ri.ingredient?.cost_per_unit || 0) * convertToBaseUnit(ri.quantity, ri.unit, ri.ingredient?.unit)).toFixed(2)} €</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
