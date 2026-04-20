@@ -1734,7 +1734,7 @@ function RecipeEditView({
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
                       <SelectContent>
                         {allIngredients.map(i => (
-                          <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                          <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
