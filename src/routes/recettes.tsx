@@ -1448,21 +1448,31 @@ function CommandesTab({ recipes, ingredients }: { recipes: Recipe[]; ingredients
               );
               return (
                 <div key={supName} className="rounded-xl border border-border bg-card overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleSupplier(supName)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border hover:bg-muted/60 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-2">
+                  <div className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 border-b border-border gap-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleSupplier(supName)}
+                      className="flex items-center gap-2 hover:opacity-80 transition-opacity text-left flex-1 min-w-0"
+                    >
                       <ChevronDown
                         className={`h-4 w-4 text-muted-foreground transition-transform ${collapsedSuppliers[supName] ? '-rotate-90' : ''}`}
                       />
-                      <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-semibold text-foreground">{supName}</span>
-                      <span className="text-xs text-muted-foreground">({items.length})</span>
+                      <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-foreground truncate">{supName}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">({items.length})</span>
+                    </button>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleValidateSupplier(supName)}
+                        disabled={validating === supName}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        {validating === supName ? 'Validation...' : 'Valider'}
+                      </Button>
                     </div>
-                    <span className="text-sm font-medium text-foreground">{supTotal.toFixed(2)} €</span>
-                  </button>
+                  </div>
                   {!collapsedSuppliers[supName] && (
                   <Table>
                     <TableHeader>
