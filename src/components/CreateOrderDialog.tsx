@@ -226,23 +226,29 @@ export function CreateOrderDialog({ open, onOpenChange, clients, warehouses, pro
             ) : filteredProducts.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">Aucun produit</p>
             ) : (
-              <div className="max-h-48 overflow-y-auto space-y-1">
-                {filteredProducts.slice(0, 50).map(p => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => addProduct(p)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors text-left text-sm"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{p.name}</span>
-                      <span className="text-xs text-muted-foreground">{p.categories?.name}</span>
+              <div className="max-h-72 overflow-y-auto space-y-3">
+                {groupedProducts.map(group => (
+                  <div key={group.name}>
+                    <h5 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-1 mb-1 sticky top-0 bg-background py-1">
+                      {group.name} <span className="text-muted-foreground/60 font-normal">({group.items.length})</span>
+                    </h5>
+                    <div className="space-y-1">
+                      {group.items.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => addProduct(p)}
+                          className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-muted/60 transition-colors text-left text-sm"
+                        >
+                          <span className="font-medium">{p.name}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium">{Number(p.price).toFixed(2)} €/{p.unit}</span>
+                            <Plus className="h-4 w-4 text-primary" />
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium">{Number(p.price).toFixed(2)} €/{p.unit}</span>
-                      <Plus className="h-4 w-4 text-primary" />
-                    </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
