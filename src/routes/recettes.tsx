@@ -2438,6 +2438,20 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
   const steps = recipe.recipe_steps?.sort((a, b) => a.step_number - b.step_number) || [];
 
+  // ---- Calcul des calories par portion ----
+  // Pour chaque ingrédient: kcal = kcal_per_unit (par unité de base) × quantité (convertie en unité de base)
+  // Puis on divise par le yield_quantity (nombre de portions).
+  const totalKcal = (recipe.recipe_ingredients || []).reduce((sum, ri) => {
+    const ing: any = ri.ingredient;
+    const kcalPerUnit = Number(ing?.kcal_per_unit) || 0;
+    const baseQty = convertToBaseUnit(ri.quantity, ri.unit, ing?.unit);
+    return sum + kcalPerUnit * baseQty;
+  }, 0);
+  const yieldQty = recipe.yield_quantity || 1;
+  const kcalPerPortion = totalKcal / yieldQty;
+  const hasKcalData = (recipe.recipe_ingredients || []).some((ri) => Number((ri.ingredient as any)?.kcal_per_unit) > 0);
+  const allIngredientsHaveKcal = (recipe.recipe_ingredients || []).every((ri) => Number((ri.ingredient as any)?.kcal_per_unit) > 0);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -2469,7 +2483,7 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
 
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-xs text-muted-foreground">Rendement</p>
             <p className="text-lg font-bold text-foreground">{recipe.yield_quantity} {recipe.yield_unit}</p>
@@ -2485,6 +2499,21 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-xs text-muted-foreground">Coût / unité</p>
             <p className="text-lg font-bold text-foreground">{costPerUnit.toFixed(2)} €</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3 text-center">
+            <p className="text-xs text-muted-foreground">Calories / portion</p>
+            {hasKcalData ? (
+              <>
+                <p className="text-lg font-bold text-foreground">
+                  {Math.round(kcalPerPortion)} kcal
+                </p>
+                {!allIngredientsHaveKcal && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Estimation partielle</p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-1">À renseigner</p>
+            )}
           </div>
         </div>
 
