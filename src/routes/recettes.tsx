@@ -2254,6 +2254,30 @@ function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: R
   const stepCount = recipe.recipe_steps?.length || 0;
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
+  const handlePrint = () => {
+    const steps = (recipe.recipe_steps || []).slice().sort((a, b) => a.step_number - b.step_number);
+    downloadRecipePdf({
+      title: recipe.product?.name || 'Recette',
+      category: recipe.product?.categories?.name || null,
+      yield_quantity: recipe.yield_quantity,
+      yield_unit: recipe.yield_unit,
+      prep_time_minutes: recipe.prep_time_minutes,
+      cook_time_minutes: recipe.cook_time_minutes,
+      ingredients: (recipe.recipe_ingredients || []).map(ri => ({
+        name: ri.ingredient?.name || '—',
+        quantity: ri.quantity,
+        unit: ri.unit,
+        is_super: ri.ingredient?.is_super,
+      })),
+      steps: steps.map(s => ({
+        step_number: s.step_number,
+        instruction: s.instruction,
+        duration_minutes: s.duration_minutes,
+      })),
+      notes: recipe.notes,
+    });
+  };
+
   return (
     <div className={`group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md ${recipe.product?.active === false ? 'opacity-60' : ''}`}>
       <div className="flex items-start gap-3">
@@ -2287,9 +2311,10 @@ function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: R
           <span className="text-muted-foreground">/ {recipe.yield_quantity} {recipe.yield_unit}</span>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}><Eye className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}><Pencil className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView} title="Voir"><Eye className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrint} title="Imprimer PDF"><FileDown className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit} title="Modifier"><Pencil className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDelete} title="Supprimer"><Trash2 className="h-4 w-4" /></Button>
         </div>
       </div>
     </div>
