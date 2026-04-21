@@ -2235,7 +2235,7 @@ function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: R
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
   return (
-    <div className="group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
+    <div className={`group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md ${recipe.product?.active === false ? 'opacity-60' : ''}`}>
       <div className="flex items-start gap-3">
         {recipe.product?.image_url ? (
           <img src={recipe.product.image_url} alt="" className="h-14 w-14 rounded-lg object-cover" />
@@ -2245,7 +2245,12 @@ function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: R
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{recipe.product?.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground truncate">{recipe.product?.name}</h3>
+            {recipe.product?.active === false && (
+              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Inactif</span>
+            )}
+          </div>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
             {totalTime > 0 && (
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{totalTime} min</span>
