@@ -162,16 +162,35 @@ function RecettesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Auto-add low-stock ingredients to purchase cart (1 UVC each)
+  // Auto-sync purchase cart with low-stock ingredients
   const cartItems = usePurchaseCartStore(s => s.items);
   const addToCart = usePurchaseCartStore(s => s.addItem);
+  const removeFromCart = usePurchaseCartStore(s => s.removeItem);
   useEffect(() => {
     if (loading || ingredients.length === 0) return;
+    const ingMap = new Map(ingredients.map(i => [i.id, i] as const));
+    const inCart = new Set(cartItems.map(c => c.ingredient.id));
+
+    // 1. Retirer du panier les ingrédients dont le stock est repassé au-dessus du seuil min
+    let removed = 0;
+    cartItems.forEach(item => {
+      const ing = ingMap.get(item.ingredient.id);
+      if (!ing) return;
+      const stockMin = Number((ing as any).stock_min) || 0;
+      const stockQty = Number((ing as any).stock_quantity) || 0;
+      if (stockMin > 0 && stockQty > stockMin) {
+        removeFromCart(item.ingredient.id);
+        removed++;
+      }
+    });
+    if (removed > 0) {
+      toast.info(`${removed} ingrédient${removed > 1 ? 's retirés' : ' retiré'} du panier (stock reconstitué)`);
+    }
+
+    // 2. Ajouter les ingrédients en stock bas qui n'y sont pas encore
     const lowStock = ingredients.filter(
       i => !i.is_super && (i as any).stock_min > 0 && Number((i as any).stock_quantity) <= Number((i as any).stock_min)
     );
-    if (lowStock.length === 0) return;
-    const inCart = new Set(cartItems.map(c => c.ingredient.id));
     let added = 0;
     lowStock.forEach(ing => {
       if (inCart.has(ing.id)) return;
