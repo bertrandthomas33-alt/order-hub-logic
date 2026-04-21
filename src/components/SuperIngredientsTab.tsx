@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Search, Sparkles, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Search, Sparkles, Pencil, Trash2, X, FileDown } from 'lucide-react';
+import { downloadSuperIngredientPdf } from '@/lib/recipe-pdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -295,6 +296,25 @@ export function SuperIngredientsTab({ onRefresh }: { onRefresh: () => void }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        title="Imprimer la fiche technique"
+                        onClick={() => downloadSuperIngredientPdf({
+                          title: s.name,
+                          yield_quantity: s.yield_quantity || 1,
+                          yield_unit: s.yield_unit || s.unit,
+                          components: (s.components || []).map(c => ({
+                            name: c.ingredient?.name || '—',
+                            quantity: c.quantity,
+                            unit: c.unit,
+                            is_super: c.ingredient?.is_super,
+                          })),
+                        })}
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
