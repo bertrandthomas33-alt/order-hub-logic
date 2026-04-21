@@ -131,6 +131,7 @@ export type Database = {
           is_super: boolean
           kcal_per_unit: number
           name: string
+          reference: string | null
           stock_min: number
           stock_quantity: number
           supplier: string | null
@@ -151,6 +152,7 @@ export type Database = {
           is_super?: boolean
           kcal_per_unit?: number
           name: string
+          reference?: string | null
           stock_min?: number
           stock_quantity?: number
           supplier?: string | null
@@ -171,6 +173,7 @@ export type Database = {
           is_super?: boolean
           kcal_per_unit?: number
           name?: string
+          reference?: string | null
           stock_min?: number
           stock_quantity?: number
           supplier?: string | null
