@@ -215,9 +215,14 @@ function RecettesPage() {
     return <Navigate to="/" />;
   }
 
-  const filtered = recipes.filter(r =>
-    r.product?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = recipes
+    .filter(r => r.product?.name?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const aActive = a.product?.active ? 1 : 0;
+      const bActive = b.product?.active ? 1 : 0;
+      if (aActive !== bActive) return bActive - aActive;
+      return (a.product?.name || '').localeCompare(b.product?.name || '');
+    });
 
   const productsWithoutRecipe = products.filter(
     p => !recipes.some(r => r.product_id === p.id)
