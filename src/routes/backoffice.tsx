@@ -377,7 +377,7 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterWarehouse, setFilterWarehouse] = useState<string>('all');
-  const [filterActive, setFilterActive] = useState<string>('all');
+  const [filterActive, setFilterActive] = useState<string>('true');
 
   const toggleActive = async (productId: string, active: boolean) => {
     const { error } = await supabase.from('products').update({ active }).eq('id', productId);
@@ -470,8 +470,8 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
             <SelectItem value="false">Inactifs</SelectItem>
           </SelectContent>
         </Select>
-        {(filterCategory !== 'all' || filterWarehouse !== 'all' || filterActive !== 'all') && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterCategory('all'); setFilterWarehouse('all'); setFilterActive('all'); }}>
+        {(filterCategory !== 'all' || filterWarehouse !== 'all' || filterActive !== 'true') && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterCategory('all'); setFilterWarehouse('all'); setFilterActive('true'); }}>
             Réinitialiser
           </Button>
         )}
