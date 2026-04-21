@@ -52,6 +52,7 @@ type Ingredient = {
   name: string;
   unit: string;
   cost_per_unit: number;
+  kcal_per_unit: number;
   supplier: string | null;
   supplier_id: string | null;
   supplier_ref?: { id: string; title: string } | null;
@@ -743,7 +744,8 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
+  const [estimatingKcal, setEstimatingKcal] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
   const cartItems = usePurchaseCartStore(s => s.items);
@@ -808,8 +810,32 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
     setShowDialog(true);
+  };
+
+  const handleEstimateKcal = async () => {
+    if (!form.name.trim()) {
+      toast.error('Saisissez d\'abord le nom de l\'ingrédient');
+      return;
+    }
+    setEstimatingKcal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('estimate-ingredient-kcal', {
+        body: { name: form.name.trim(), unit: form.unit },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const kcal = Number(data?.kcal) || 0;
+      setForm((f) => ({ ...f, kcal_per_unit: String(kcal) }));
+      toast.success(
+        `≈ ${kcal} kcal pour ${data?.unit_description || '1 unité'}${data?.notes ? ` (${data.notes})` : ''}`,
+      );
+    } catch (e: any) {
+      toast.error(`Estimation impossible : ${e?.message || 'erreur inconnue'}`);
+    } finally {
+      setEstimatingKcal(false);
+    }
   };
 
   // Try to parse stored uvc label like "12x500 g" or "5 kg" → pieces & per-piece qty
@@ -838,6 +864,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       name: ing.name,
       unit: ing.unit,
       cost_per_unit: String(cost || ''),
+      kcal_per_unit: String(Number(ing.kcal_per_unit) || ''),
       supplier_id: ing.supplier_id || '',
       stock_quantity: String(ing.stock_quantity ?? ''),
       uvc_pieces: parsed.pieces,
@@ -873,6 +900,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       name: form.name.trim(),
       unit: form.unit,
       cost_per_unit: costPerUnit,
+      kcal_per_unit: parseFloat(form.kcal_per_unit) || 0,
       supplier_id: form.supplier_id || null,
       stock_quantity: parseFloat(form.stock_quantity) || 0,
       uvc_quantity: uvcQty,
@@ -1261,6 +1289,33 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                   />
                 </div>
               </div>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Calories (kcal pour 1 {form.unit === 'unite' ? 'unité' : form.unit})</label>
+              <div className="flex items-end gap-2">
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="ex. 890"
+                  value={form.kcal_per_unit}
+                  onChange={(e) => setForm({ ...form, kcal_per_unit: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                  disabled={estimatingKcal || !form.name.trim()}
+                  onClick={handleEstimateKcal}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {estimatingKcal ? 'Estimation…' : 'Estimer (IA)'}
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Sert au calcul des calories par portion dans les fiches techniques.
+              </p>
             </div>
             <div>
               <label className="text-sm text-muted-foreground">Fournisseur</label>
@@ -2383,6 +2438,20 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
   const steps = recipe.recipe_steps?.sort((a, b) => a.step_number - b.step_number) || [];
 
+  // ---- Calcul des calories par portion ----
+  // Pour chaque ingrédient: kcal = kcal_per_unit (par unité de base) × quantité (convertie en unité de base)
+  // Puis on divise par le yield_quantity (nombre de portions).
+  const totalKcal = (recipe.recipe_ingredients || []).reduce((sum, ri) => {
+    const ing: any = ri.ingredient;
+    const kcalPerUnit = Number(ing?.kcal_per_unit) || 0;
+    const baseQty = convertToBaseUnit(ri.quantity, ri.unit, ing?.unit);
+    return sum + kcalPerUnit * baseQty;
+  }, 0);
+  const yieldQty = recipe.yield_quantity || 1;
+  const kcalPerPortion = totalKcal / yieldQty;
+  const hasKcalData = (recipe.recipe_ingredients || []).some((ri) => Number((ri.ingredient as any)?.kcal_per_unit) > 0);
+  const allIngredientsHaveKcal = (recipe.recipe_ingredients || []).every((ri) => Number((ri.ingredient as any)?.kcal_per_unit) > 0);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -2414,7 +2483,7 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
 
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-xs text-muted-foreground">Rendement</p>
             <p className="text-lg font-bold text-foreground">{recipe.yield_quantity} {recipe.yield_unit}</p>
@@ -2430,6 +2499,21 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
           <div className="rounded-lg border border-border bg-card p-3 text-center">
             <p className="text-xs text-muted-foreground">Coût / unité</p>
             <p className="text-lg font-bold text-foreground">{costPerUnit.toFixed(2)} €</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3 text-center">
+            <p className="text-xs text-muted-foreground">Calories / portion</p>
+            {hasKcalData ? (
+              <>
+                <p className="text-lg font-bold text-foreground">
+                  {Math.round(kcalPerPortion)} kcal
+                </p>
+                {!allIngredientsHaveKcal && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Estimation partielle</p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-1">À renseigner</p>
+            )}
           </div>
         </div>
 

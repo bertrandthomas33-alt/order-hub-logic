@@ -129,6 +129,7 @@ export type Database = {
           id: string
           ingredient_type: Database["public"]["Enums"]["ingredient_type"]
           is_super: boolean
+          kcal_per_unit: number
           name: string
           stock_min: number
           stock_quantity: number
@@ -148,6 +149,7 @@ export type Database = {
           id?: string
           ingredient_type?: Database["public"]["Enums"]["ingredient_type"]
           is_super?: boolean
+          kcal_per_unit?: number
           name: string
           stock_min?: number
           stock_quantity?: number
@@ -167,6 +169,7 @@ export type Database = {
           id?: string
           ingredient_type?: Database["public"]["Enums"]["ingredient_type"]
           is_super?: boolean
+          kcal_per_unit?: number
           name?: string
           stock_min?: number
           stock_quantity?: number
