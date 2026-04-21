@@ -37,14 +37,14 @@ type Tab = 'commandes' | 'produits' | 'clients' | 'entrepots';
 
 const statusLabels: Record<string, string> = {
   pending: 'En attente',
-  confirmed: 'Confirmée',
+  confirmed: 'Validée',
   in_production: 'En production',
   delivered: 'Livrée',
 };
 
 const statusColors: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-800',
-  confirmed: 'bg-blue-100 text-blue-800',
+  confirmed: 'bg-emerald-100 text-emerald-800',
   in_production: 'bg-purple-100 text-purple-800',
   delivered: 'bg-emerald-100 text-emerald-800',
 };
