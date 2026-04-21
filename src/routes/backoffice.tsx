@@ -3,7 +3,7 @@ import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
-import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Package, Users, ClipboardList, FileText, Search, Check, X, Warehouse, Pencil, Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { CreateClientDialog } from '@/components/CreateClientDialog';
@@ -378,6 +378,8 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterWarehouse, setFilterWarehouse] = useState<string>('all');
   const [filterActive, setFilterActive] = useState<string>('true');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleCat = (id: string) => setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const toggleActive = async (productId: string, active: boolean) => {
     const { error } = await supabase.from('products').update({ active }).eq('id', productId);
@@ -412,54 +414,65 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
     return () => window.removeEventListener('keydown', handler);
   }, [selectedProductId, nav]);
 
-  const filtered = products.filter((p: any) => {
+  // Search/active filter applied across all warehouses
+  const baseFiltered = products.filter((p: any) => {
     const matchSearch = !search || p.name?.toLowerCase().includes(search.toLowerCase()) || p.categories?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = filterCategory === 'all' || p.category_id === filterCategory;
-    const matchWarehouse = filterWarehouse === 'all' || p.categories?.warehouses?.name === warehouses.find((w: any) => w.id === filterWarehouse)?.name;
     const matchActive = filterActive === 'all' || (filterActive === 'true' ? p.active : !p.active);
-    return matchSearch && matchCategory && matchWarehouse && matchActive;
+    return matchSearch && matchActive;
   });
 
-  const filteredCategories = filterWarehouse === 'all'
+  const filtered = baseFiltered.filter((p: any) => {
+    return filterWarehouse === 'all' || p.categories?.warehouse_id === filterWarehouse;
+  });
+
+  // Group filtered products by category
+  const productsByCategory = filtered.reduce((acc: Record<string, any[]>, p: any) => {
+    const catId = p.category_id || 'uncat';
+    if (!acc[catId]) acc[catId] = [];
+    acc[catId].push(p);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  const visibleCategories = (filterWarehouse === 'all'
     ? categories
-    : categories.filter((cat: any) => cat.warehouse_id === filterWarehouse);
+    : categories.filter((c: any) => c.warehouse_id === filterWarehouse)
+  ).filter((c: any) => productsByCategory[c.id]?.length).sort((a: any, b: any) => a.name.localeCompare(b.name, 'fr'));
+
+
+
 
   return (
     <>
+      {/* Warehouse tabs */}
+      <div className="mb-4 -mx-4 sm:mx-0 overflow-x-auto scrollbar-none border-b border-border">
+        <div className="flex w-max gap-2 px-4 sm:px-0 pb-3">
+          <button
+            onClick={() => setFilterWarehouse('all')}
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+              filterWarehouse === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+            }`}
+          >
+            Tous les entrepôts
+          </button>
+          {warehouses.map((wh: any) => (
+            <button
+              key={wh.id}
+              onClick={() => setFilterWarehouse(wh.id)}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                filterWarehouse === wh.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+              }`}
+            >
+              {wh.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Filter className="h-4 w-4" />
-          Filtres
+          Statut
         </div>
-        <Select value={filterWarehouse} onValueChange={(val) => {
-          setFilterWarehouse(val);
-          // Reset category if it doesn't belong to new warehouse
-          if (val !== 'all' && filterCategory !== 'all') {
-            const cat = categories.find((c: any) => c.id === filterCategory);
-            if (cat && cat.warehouse_id !== val) setFilterCategory('all');
-          }
-        }}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Entrepôt" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous entrepôts</SelectItem>
-            {warehouses.map((wh: any) => (
-              <SelectItem key={wh.id} value={wh.id}>{wh.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Catégorie" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes catégories</SelectItem>
-            {filteredCategories.map((cat: any) => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Select value={filterActive} onValueChange={setFilterActive}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Statut" />
@@ -470,88 +483,103 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
             <SelectItem value="false">Inactifs</SelectItem>
           </SelectContent>
         </Select>
-        {(filterCategory !== 'all' || filterWarehouse !== 'all' || filterActive !== 'true') && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterCategory('all'); setFilterWarehouse('all'); setFilterActive('true'); }}>
-            Réinitialiser
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={() => setCollapsed(Object.fromEntries(visibleCategories.map((c: any) => [c.id, true])))}>
+          Tout replier
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => setCollapsed({})}>
+          Tout déplier
+        </Button>
         <span className="ml-auto text-xs text-muted-foreground">{filtered.length} produit(s)</span>
         <Button className="gap-2" onClick={() => setShowCreate(true)}>
           <Plus className="h-4 w-4" />
           Nouveau produit
         </Button>
       </div>
-      <div className="rounded-2xl border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Image</TableHead>
-              <TableHead>Nom</TableHead>
-              <TableHead>Catégorie</TableHead>
-              <TableHead>Entrepôt</TableHead>
-              <TableHead className="text-right">Prix de revient</TableHead>
-              <TableHead className="text-right">Stock</TableHead>
-              <TableHead>Actif</TableHead>
-              <TableHead className="w-10"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow>
-              <TableCell colSpan={9} className="py-12 text-center text-muted-foreground">Aucun produit trouvé</TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((product: any) => (
-                <TableRow key={product.id} className={`cursor-pointer ${selectedProductId === product.id ? 'bg-muted/50' : ''}`} onClick={() => setSelectedProductId(product.id === selectedProductId ? null : product.id)}>
-                  <TableCell>
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        <Package className="h-4 w-4" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-xs text-muted-foreground">{product.description}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
-                      {product.categories?.name || '—'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {product.categories?.warehouses?.name || '—'}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{Number(product.cost_price ?? 0).toFixed(2)} €</TableCell>
-                  <TableCell className="text-right">{Number(product.stock ?? 0)}</TableCell>
-                  <TableCell>
-                    <Switch checked={product.active} onCheckedChange={(checked) => toggleActive(product.id, checked)} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => setEditProduct(product)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={async () => {
-                        if (!confirm(`Supprimer "${product.name}" ?`)) return;
-                        const { error } = await supabase.from('products').delete().eq('id', product.id);
-                        if (error) { toast.error('Erreur lors de la suppression'); console.error(error); }
-                        else { toast.success('Produit supprimé'); onRefresh(); }
-                      }}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+
+      {visibleCategories.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-card py-12 text-center text-muted-foreground">
+          Aucun produit trouvé
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {visibleCategories.map((cat: any) => {
+            const items = productsByCategory[cat.id] || [];
+            const isCollapsed = collapsed[cat.id];
+            return (
+              <div key={cat.id} className="rounded-2xl border border-border bg-card overflow-hidden">
+                <button
+                  onClick={() => toggleCat(cat.id)}
+                  className="flex w-full items-center gap-2 bg-primary/10 px-4 py-2.5 text-left transition-colors hover:bg-primary/15"
+                >
+                  {isCollapsed ? <ChevronRight className="h-4 w-4 text-primary" /> : <ChevronDown className="h-4 w-4 text-primary" />}
+                  <span className="font-heading font-bold text-primary">
+                    {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+                  </span>
+                  <span className="ml-2 text-xs text-muted-foreground">({items.length})</span>
+                  {filterWarehouse === 'all' && (
+                    <span className="ml-auto text-xs text-muted-foreground">{cat.warehouses?.name || ''}</span>
+                  )}
+                </button>
+                {!isCollapsed && (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">Image</TableHead>
+                        <TableHead>Nom</TableHead>
+                        <TableHead className="text-right">Prix de revient</TableHead>
+                        <TableHead className="text-right">Stock</TableHead>
+                        <TableHead className="w-20">Actif</TableHead>
+                        <TableHead className="w-20"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {items.map((product: any) => (
+                        <TableRow key={product.id} className={`cursor-pointer ${selectedProductId === product.id ? 'bg-muted/50' : ''}`} onClick={() => setSelectedProductId(product.id === selectedProductId ? null : product.id)}>
+                          <TableCell>
+                            {product.image_url ? (
+                              <img src={product.image_url} alt={product.name} className="h-10 w-10 rounded-lg object-cover" />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                <Package className="h-4 w-4" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-xs text-muted-foreground">{product.description}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">{Number(product.cost_price ?? 0).toFixed(2)} €</TableCell>
+                          <TableCell className="text-right">{Number(product.stock ?? 0)}</TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Switch checked={product.active} onCheckedChange={(checked) => toggleActive(product.id, checked)} />
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => setEditProduct(product)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={async () => {
+                                if (!confirm(`Supprimer "${product.name}" ?`)) return;
+                                const { error } = await supabase.from('products').delete().eq('id', product.id);
+                                if (error) { toast.error('Erreur lors de la suppression'); console.error(error); }
+                                else { toast.success('Produit supprimé'); onRefresh(); }
+                              }}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <EditProductDialog
         product={editProduct}
         categories={categories}
