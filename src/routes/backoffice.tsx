@@ -378,6 +378,8 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterWarehouse, setFilterWarehouse] = useState<string>('all');
   const [filterActive, setFilterActive] = useState<string>('true');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleCat = (id: string) => setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const toggleActive = async (productId: string, active: boolean) => {
     const { error } = await supabase.from('products').update({ active }).eq('id', productId);
@@ -436,9 +438,8 @@ function ProduitsTable({ products, categories, warehouses, search, onRefresh }: 
     : categories.filter((c: any) => c.warehouse_id === filterWarehouse)
   ).filter((c: any) => productsByCategory[c.id]?.length).sort((a: any, b: any) => a.name.localeCompare(b.name, 'fr'));
 
-  // Auto-collapse state per category — open by default
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const toggleCat = (id: string) => setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+
+
 
   return (
     <>
