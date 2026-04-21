@@ -679,7 +679,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
   const cartItems = usePurchaseCartStore(s => s.items);
@@ -744,7 +744,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
     setShowDialog(true);
   };
 
@@ -780,6 +780,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       uvc_piece_qty: parsed.pieceQty,
       uvc_piece_unit: parsed.pieceUnit,
       uvc_price: cost ? (cost * uvcQty).toFixed(2) : '',
+      ingredient_type: (ing.ingredient_type as IngredientType) || 'epicerie',
     });
     setShowDialog(true);
   };
@@ -812,6 +813,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       stock_quantity: parseFloat(form.stock_quantity) || 0,
       uvc_quantity: uvcQty,
       uvc: uvcLabel,
+      ingredient_type: form.ingredient_type,
     };
 
     if (editing) {
