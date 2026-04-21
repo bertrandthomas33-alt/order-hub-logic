@@ -2480,9 +2480,20 @@ function RecipeEditView({
                     }}>
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
                       <SelectContent>
-                        {allIngredients.map(i => (
-                          <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
-                        ))}
+                        {INGREDIENT_TYPE_OPTIONS.map(typeOpt => {
+                          const items = allIngredients.filter(i => (i.ingredient_type || 'epicerie') === typeOpt.value);
+                          if (items.length === 0) return null;
+                          return (
+                            <div key={typeOpt.value}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50">
+                                {typeOpt.label}
+                              </div>
+                              {items.map(i => (
+                                <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <Input type="number" step="0.001" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
