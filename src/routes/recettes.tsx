@@ -57,6 +57,25 @@ type Ingredient = {
   is_super?: boolean;
   yield_quantity?: number;
   yield_unit?: string | null;
+  ingredient_type?: IngredientType;
+};
+
+type IngredientType = 'surgele' | 'frais' | 'epicerie' | 'fruits_legumes' | 'emballage';
+
+const INGREDIENT_TYPE_OPTIONS: { value: IngredientType; label: string }[] = [
+  { value: 'epicerie', label: 'Épicerie' },
+  { value: 'frais', label: 'Frais' },
+  { value: 'surgele', label: 'Surgelé' },
+  { value: 'fruits_legumes', label: 'Fruits & légumes' },
+  { value: 'emballage', label: 'Emballage' },
+];
+
+const INGREDIENT_TYPE_LABEL: Record<IngredientType, string> = {
+  epicerie: 'Épicerie',
+  frais: 'Frais',
+  surgele: 'Surgelé',
+  fruits_legumes: 'Fruits & légumes',
+  emballage: 'Emballage',
 };
 
 type SupplierOption = { id: string; title: string };
@@ -660,7 +679,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
   const cartItems = usePurchaseCartStore(s => s.items);
@@ -725,7 +744,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
     setShowDialog(true);
   };
 
@@ -761,6 +780,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       uvc_piece_qty: parsed.pieceQty,
       uvc_piece_unit: parsed.pieceUnit,
       uvc_price: cost ? (cost * uvcQty).toFixed(2) : '',
+      ingredient_type: (ing.ingredient_type as IngredientType) || 'epicerie',
     });
     setShowDialog(true);
   };
@@ -793,6 +813,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       stock_quantity: parseFloat(form.stock_quantity) || 0,
       uvc_quantity: uvcQty,
       uvc: uvcLabel,
+      ingredient_type: form.ingredient_type,
     };
 
     if (editing) {
@@ -1040,6 +1061,17 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                   );
                 })()}
               </div>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Type d'ingrédient</label>
+              <Select value={form.ingredient_type} onValueChange={v => setForm({ ...form, ingredient_type: v as IngredientType })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {INGREDIENT_TYPE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Conditionnement UVC</p>
@@ -2448,9 +2480,20 @@ function RecipeEditView({
                     }}>
                       <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
                       <SelectContent>
-                        {allIngredients.map(i => (
-                          <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
-                        ))}
+                        {INGREDIENT_TYPE_OPTIONS.map(typeOpt => {
+                          const items = allIngredients.filter(i => (i.ingredient_type || 'epicerie') === typeOpt.value);
+                          if (items.length === 0) return null;
+                          return (
+                            <div key={typeOpt.value}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50">
+                                {typeOpt.label}
+                              </div>
+                              {items.map(i => (
+                                <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <Input type="number" step="0.001" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
