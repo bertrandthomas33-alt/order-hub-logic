@@ -305,6 +305,21 @@ function RecettesPage() {
     if (!editingRecipe?.id) return;
     const recipeId = editingRecipe.id;
 
+    // 1) Validation préalable - filtrer les lignes invalides AVANT toute écriture en base
+    const validIngredients = editIngredients.filter(
+      (i) => i.ingredient_id && i.ingredient_id.trim() !== '' && Number(i.quantity) > 0
+    );
+    const invalidCount = editIngredients.length - validIngredients.length;
+    if (invalidCount > 0) {
+      toast.error(
+        `${invalidCount} ligne(s) d'ingrédient incomplète(s) : sélectionnez un ingrédient et une quantité > 0, ou supprimez la ligne avant de sauvegarder.`
+      );
+      return;
+    }
+
+    const validSteps = editSteps.filter((s) => (s.instruction || '').trim() !== '');
+
+    // 2) Update de la recette
     const { error: recipeErr } = await supabase.from('recipes').update({
       yield_quantity: editingRecipe.yield_quantity || 1,
       yield_unit: editingRecipe.yield_unit || 'portion',
@@ -315,36 +330,73 @@ function RecettesPage() {
       image_url: editingRecipe.image_url,
     }).eq('id', recipeId);
 
-    if (recipeErr) { toast.error('Erreur sauvegarde recette'); return; }
-
-    await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
-    if (editIngredients.length > 0) {
-      await supabase.from('recipe_ingredients').insert(
-        editIngredients.map(i => ({ ...i, recipe_id: recipeId }))
-      );
+    if (recipeErr) {
+      toast.error(`Erreur sauvegarde recette : ${recipeErr.message}`);
+      return;
     }
 
-    await supabase.from('recipe_steps').delete().eq('recipe_id', recipeId);
-    if (editSteps.length > 0) {
-      await supabase.from('recipe_steps').insert(
-        editSteps.map((s, idx) => ({
+    // 3) Ingrédients : on insère d'abord pour valider, puis on remplace l'ancien jeu
+    if (validIngredients.length > 0) {
+      const payload = validIngredients.map((i) => ({
+        ingredient_id: i.ingredient_id,
+        quantity: Number(i.quantity) || 0,
+        unit: i.unit || 'kg',
+        recipe_id: recipeId,
+      }));
+      // Stratégie sécurisée : delete puis insert dans le bon ordre, mais on vérifie l'erreur
+      const { error: delErr } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+      if (delErr) {
+        toast.error(`Erreur suppression anciens ingrédients : ${delErr.message}`);
+        return;
+      }
+      const { error: insErr } = await supabase.from('recipe_ingredients').insert(payload);
+      if (insErr) {
+        toast.error(`Erreur insertion ingrédients : ${insErr.message}. Vos données n'ont pas été perdues, rechargez la page.`);
+        await fetchData();
+        return;
+      }
+    } else {
+      // Aucun ingrédient valide : on vide la table
+      const { error: delErr } = await supabase.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
+      if (delErr) {
+        toast.error(`Erreur suppression ingrédients : ${delErr.message}`);
+        return;
+      }
+    }
+
+    // 4) Étapes
+    const { error: delStepErr } = await supabase.from('recipe_steps').delete().eq('recipe_id', recipeId);
+    if (delStepErr) {
+      toast.error(`Erreur suppression étapes : ${delStepErr.message}`);
+      return;
+    }
+    if (validSteps.length > 0) {
+      const { error: insStepErr } = await supabase.from('recipe_steps').insert(
+        validSteps.map((s, idx) => ({
           recipe_id: recipeId,
           step_number: idx + 1,
           instruction: s.instruction || '',
           duration_minutes: s.duration_minutes,
         }))
       );
+      if (insStepErr) {
+        toast.error(`Erreur insertion étapes : ${insStepErr.message}`);
+        return;
+      }
     }
 
-    // Recalcul du prix de revient du produit à partir des ingrédients de la recette
-    if (editingRecipe.product_id && editIngredients.length > 0) {
-      const totalCost = editIngredients.reduce((sum, ri) => {
-        const ing = ingredients.find(i => i.id === ri.ingredient_id);
-        return sum + (ing?.cost_per_unit || 0) * (ri.quantity || 0);
+    // 5) Recalcul du prix de revient du produit (informatif, le trigger DB le fera aussi)
+    if (editingRecipe.product_id && validIngredients.length > 0) {
+      const totalCost = validIngredients.reduce((sum, ri) => {
+        const ing = ingredients.find((i) => i.id === ri.ingredient_id);
+        return sum + (ing?.cost_per_unit || 0) * (Number(ri.quantity) || 0);
       }, 0);
       const yieldQty = editingRecipe.yield_quantity || 1;
       const costPerUnit = totalCost / yieldQty;
-      await supabase.from('products').update({ cost_price: Number(costPerUnit.toFixed(4)) }).eq('id', editingRecipe.product_id);
+      await supabase
+        .from('products')
+        .update({ cost_price: Number(costPerUnit.toFixed(4)) })
+        .eq('id', editingRecipe.product_id);
     }
 
     toast.success('Recette sauvegardée');
