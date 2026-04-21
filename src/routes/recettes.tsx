@@ -1117,9 +1117,19 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
             <DialogTitle>{editing ? 'Modifier l\'ingrédient' : 'Nouvel ingrédient'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm text-muted-foreground">Nom</label>
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+            <div className="grid grid-cols-[1fr_180px] gap-4">
+              <div>
+                <label className="text-sm text-muted-foreground">Nom</label>
+                <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-sm text-muted-foreground">Référence</label>
+                <Input
+                  placeholder="ex. REF-001"
+                  value={form.reference}
+                  onChange={e => setForm({ ...form, reference: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
