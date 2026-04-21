@@ -57,6 +57,25 @@ type Ingredient = {
   is_super?: boolean;
   yield_quantity?: number;
   yield_unit?: string | null;
+  ingredient_type?: IngredientType;
+};
+
+type IngredientType = 'surgele' | 'frais' | 'epicerie' | 'fruits_legumes' | 'emballage';
+
+const INGREDIENT_TYPE_OPTIONS: { value: IngredientType; label: string }[] = [
+  { value: 'epicerie', label: 'Épicerie' },
+  { value: 'frais', label: 'Frais' },
+  { value: 'surgele', label: 'Surgelé' },
+  { value: 'fruits_legumes', label: 'Fruits & légumes' },
+  { value: 'emballage', label: 'Emballage' },
+];
+
+const INGREDIENT_TYPE_LABEL: Record<IngredientType, string> = {
+  epicerie: 'Épicerie',
+  frais: 'Frais',
+  surgele: 'Surgelé',
+  fruits_legumes: 'Fruits & légumes',
+  emballage: 'Emballage',
 };
 
 type SupplierOption = { id: string; title: string };
