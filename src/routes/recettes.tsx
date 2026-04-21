@@ -53,6 +53,7 @@ type Ingredient = {
   unit: string;
   cost_per_unit: number;
   kcal_per_unit: number;
+  reference?: string | null;
   supplier: string | null;
   supplier_id: string | null;
   supplier_ref?: { id: string; title: string } | null;
@@ -744,7 +745,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
+  const [form, setForm] = useState({ name: '', reference: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
   const [estimatingKcal, setEstimatingKcal] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
@@ -810,7 +811,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
+    setForm({ name: '', reference: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
     setShowDialog(true);
   };
 
@@ -862,6 +863,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
     const parsed = parseUvcLabel(ing.uvc, ing.unit, uvcQty);
     setForm({
       name: ing.name,
+      reference: ing.reference || '',
       unit: ing.unit,
       cost_per_unit: String(cost || ''),
       kcal_per_unit: String(Number(ing.kcal_per_unit) || ''),
@@ -898,6 +900,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       : `${pieceQty} ${form.uvc_piece_unit}`;
     const payload = {
       name: form.name.trim(),
+      reference: form.reference.trim() || null,
       unit: form.unit,
       cost_per_unit: costPerUnit,
       kcal_per_unit: parseFloat(form.kcal_per_unit) || 0,
