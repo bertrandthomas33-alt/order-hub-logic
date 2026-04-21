@@ -1291,6 +1291,33 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
               </div>
             </div>
             <div>
+              <label className="text-sm text-muted-foreground">Calories (kcal pour 1 {form.unit === 'unite' ? 'unité' : form.unit})</label>
+              <div className="flex items-end gap-2">
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  placeholder="ex. 890"
+                  value={form.kcal_per_unit}
+                  onChange={(e) => setForm({ ...form, kcal_per_unit: e.target.value })}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0"
+                  disabled={estimatingKcal || !form.name.trim()}
+                  onClick={handleEstimateKcal}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {estimatingKcal ? 'Estimation…' : 'Estimer (IA)'}
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Sert au calcul des calories par portion dans les fiches techniques.
+              </p>
+            </div>
+            <div>
               <label className="text-sm text-muted-foreground">Fournisseur</label>
               <Select value={form.supplier_id || 'none'} onValueChange={v => setForm({ ...form, supplier_id: v === 'none' ? '' : v })}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner un fournisseur" /></SelectTrigger>
