@@ -1062,6 +1062,17 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                 })()}
               </div>
             </div>
+            <div>
+              <label className="text-sm text-muted-foreground">Type d'ingrédient</label>
+              <Select value={form.ingredient_type} onValueChange={v => setForm({ ...form, ingredient_type: v as IngredientType })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {INGREDIENT_TYPE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Conditionnement UVC</p>
               <div className="grid grid-cols-[1fr_auto_1fr_1fr] items-end gap-2">
