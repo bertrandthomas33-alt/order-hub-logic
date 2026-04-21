@@ -2552,30 +2552,16 @@ function RecipeEditView({
                 const cost = (ing?.cost_per_unit || 0) * baseQty;
                 return (
                   <div key={idx} className="flex items-center gap-2">
-                    <Select value={ri.ingredient_id} onValueChange={v => {
-                      const updated = [...recipeIngredients];
-                      const newIng = allIngredients.find(i => i.id === v);
-                      updated[idx] = { ...updated[idx], ingredient_id: v, unit: newIng?.unit || ri.unit };
-                      setRecipeIngredients(updated);
-                    }}>
-                      <SelectTrigger className="flex-1"><SelectValue placeholder="Ingrédient" /></SelectTrigger>
-                      <SelectContent>
-                        {INGREDIENT_TYPE_OPTIONS.map(typeOpt => {
-                          const items = allIngredients.filter(i => (i.ingredient_type || 'epicerie') === typeOpt.value);
-                          if (items.length === 0) return null;
-                          return (
-                            <div key={typeOpt.value}>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide bg-muted/50">
-                                {typeOpt.label}
-                              </div>
-                              {items.map(i => (
-                                <SelectItem key={i.id} value={i.id}>{i.is_super ? '⭐ ' : ''}{i.name}</SelectItem>
-                              ))}
-                            </div>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                    <IngredientCombobox
+                      ingredients={allIngredients}
+                      value={ri.ingredient_id}
+                      onChange={v => {
+                        const updated = [...recipeIngredients];
+                        const newIng = allIngredients.find(i => i.id === v);
+                        updated[idx] = { ...updated[idx], ingredient_id: v, unit: newIng?.unit || ri.unit };
+                        setRecipeIngredients(updated);
+                      }}
+                    />
                     <Input type="number" step="0.001" className="w-24" placeholder="Qté" value={ri.quantity || ''} onChange={e => {
                       const updated = [...recipeIngredients];
                       updated[idx] = { ...updated[idx], quantity: parseFloat(e.target.value) || 0 };
