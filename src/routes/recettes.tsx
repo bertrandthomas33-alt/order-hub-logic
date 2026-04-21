@@ -985,7 +985,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                             {(() => {
                               const inCart = cartItems.find(ci => ci.ingredient.id === ing.id);
                               const draftRaw = qtyDraft[ing.id];
-                              const draft = draftRaw !== undefined ? draftRaw : '1';
+                              const draft = draftRaw !== undefined ? draftRaw : '0';
                               const addToCart = () => {
                                 const qty = parseFloat(draft) || 0;
                                 if (qty <= 0) { toast.error('Quantité invalide'); return; }
