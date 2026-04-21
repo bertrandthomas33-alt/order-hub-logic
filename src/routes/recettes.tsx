@@ -1031,11 +1031,10 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nom</TableHead>
-                        <TableHead>Unité</TableHead>
                         <TableHead>UVC</TableHead>
                         <TableHead className="text-right">Coût / unité</TableHead>
                         <TableHead className="text-right">Stock</TableHead>
-                        <TableHead className="text-right">Statut</TableHead>
+                        <TableHead className="text-center">Statut</TableHead>
                         <TableHead className="w-44 text-center">Commander</TableHead>
                         <TableHead className="w-20"></TableHead>
                       </TableRow>
@@ -1044,9 +1043,10 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                       {group.items.map(ing => (
                         <TableRow key={ing.id}>
                           <TableCell className="font-medium">{ing.name}</TableCell>
-                          <TableCell>{ing.unit}</TableCell>
                           <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
-                          <TableCell className="text-right">{ing.cost_per_unit.toFixed(2)} €</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {ing.cost_per_unit.toFixed(2)} € <span className="text-muted-foreground">/ {ing.unit}</span>
+                          </TableCell>
                           <TableCell className="text-right">
                             {(() => {
                               const qty = Number(ing.stock_quantity ?? 0);
@@ -1064,10 +1064,15 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                               );
                             })()}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ing.active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                              {ing.active ? 'Actif' : 'Inactif'}
-                            </span>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={ing.active}
+                              onCheckedChange={async (checked) => {
+                                const { error } = await supabase.from('ingredients').update({ active: checked }).eq('id', ing.id);
+                                if (error) { toast.error('Erreur mise à jour'); return; }
+                                onRefresh();
+                              }}
+                            />
                           </TableCell>
                           <TableCell className="text-center">
                             {(() => {
