@@ -2173,6 +2173,7 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
     i.active && (
       i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (i.supplier || '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const lowStock = filtered.filter(i => (i as any).stock_min > 0 && (i as any).stock_quantity <= (i as any).stock_min);
