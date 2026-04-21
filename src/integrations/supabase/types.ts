@@ -707,6 +707,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_ingredient_recursive: {
+        Args: { _ingredient_id: string }
+        Returns: undefined
+      }
       convert_to_base_unit: {
         Args: { _base_unit: string; _from_unit: string; _qty: number }
         Returns: number
