@@ -52,6 +52,7 @@ type Ingredient = {
   name: string;
   unit: string;
   cost_per_unit: number;
+  kcal_per_unit: number;
   supplier: string | null;
   supplier_id: string | null;
   supplier_ref?: { id: string; title: string } | null;
@@ -743,7 +744,8 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState<Ingredient | null>(null);
-  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
+  const [form, setForm] = useState({ name: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' as IngredientType });
+  const [estimatingKcal, setEstimatingKcal] = useState(false);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
   const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
   const cartItems = usePurchaseCartStore(s => s.items);
@@ -808,8 +810,32 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', cost_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
+    setForm({ name: '', unit: 'kg', cost_per_unit: '', kcal_per_unit: '', supplier_id: '', stock_quantity: '', uvc_pieces: '1', uvc_piece_qty: '1', uvc_piece_unit: 'kg', uvc_price: '', ingredient_type: 'epicerie' });
     setShowDialog(true);
+  };
+
+  const handleEstimateKcal = async () => {
+    if (!form.name.trim()) {
+      toast.error('Saisissez d\'abord le nom de l\'ingrédient');
+      return;
+    }
+    setEstimatingKcal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('estimate-ingredient-kcal', {
+        body: { name: form.name.trim(), unit: form.unit },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const kcal = Number(data?.kcal) || 0;
+      setForm((f) => ({ ...f, kcal_per_unit: String(kcal) }));
+      toast.success(
+        `≈ ${kcal} kcal pour ${data?.unit_description || '1 unité'}${data?.notes ? ` (${data.notes})` : ''}`,
+      );
+    } catch (e: any) {
+      toast.error(`Estimation impossible : ${e?.message || 'erreur inconnue'}`);
+    } finally {
+      setEstimatingKcal(false);
+    }
   };
 
   // Try to parse stored uvc label like "12x500 g" or "5 kg" → pieces & per-piece qty
@@ -838,6 +864,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       name: ing.name,
       unit: ing.unit,
       cost_per_unit: String(cost || ''),
+      kcal_per_unit: String(Number(ing.kcal_per_unit) || ''),
       supplier_id: ing.supplier_id || '',
       stock_quantity: String(ing.stock_quantity ?? ''),
       uvc_pieces: parsed.pieces,
@@ -873,6 +900,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
       name: form.name.trim(),
       unit: form.unit,
       cost_per_unit: costPerUnit,
+      kcal_per_unit: parseFloat(form.kcal_per_unit) || 0,
       supplier_id: form.supplier_id || null,
       stock_quantity: parseFloat(form.stock_quantity) || 0,
       uvc_quantity: uvcQty,
