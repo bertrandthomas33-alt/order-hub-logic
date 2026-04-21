@@ -1,0 +1,1 @@
+UPDATE public.clients SET name = REPLACE(name, 'Soup&Juice', 'SnJ') WHERE name LIKE '%Soup&Juice%';
