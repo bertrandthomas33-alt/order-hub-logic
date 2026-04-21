@@ -398,7 +398,7 @@ function RecettesPage() {
             <TabsList className="inline-flex w-max justify-start gap-1 mx-4 sm:mx-0">
               <TabsTrigger value="fiches" className="gap-2 whitespace-nowrap"><ChefHat className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Fiches Techniques</span><span className="xs:hidden sm:hidden">Fiches</span></TabsTrigger>
               <TabsTrigger value="ingredients" className="gap-2 whitespace-nowrap"><Package className="h-4 w-4" />Ingrédients</TabsTrigger>
-              <TabsTrigger value="super" className="gap-2 whitespace-nowrap"><Sparkles className="h-4 w-4" /><span className="hidden xs:inline sm:inline">Super Ingrédients</span><span className="xs:hidden sm:hidden">Super</span></TabsTrigger>
+              
               <TabsTrigger value="fournisseurs" className="gap-2 whitespace-nowrap"><Truck className="h-4 w-4" />Fournisseurs</TabsTrigger>
               <TabsTrigger value="commandes" className="gap-2 whitespace-nowrap"><ShoppingCart className="h-4 w-4" />Commandes</TabsTrigger>
               <TabsTrigger value="stock" className="gap-2 whitespace-nowrap"><Warehouse className="h-4 w-4" />Stock</TabsTrigger>
@@ -433,11 +433,6 @@ function RecettesPage() {
               autoEditId={editIngredientId}
               onAutoEditConsumed={() => setEditIngredientId(null)}
             />
-          </TabsContent>
-
-          {/* ===== SUPER INGRÉDIENTS ===== */}
-          <TabsContent value="super">
-            <SuperIngredientsTab onRefresh={fetchData} />
           </TabsContent>
 
           {/* ===== FOURNISSEURS ===== */}
@@ -556,8 +551,8 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
         const sortedCategories = Object.keys(grouped).sort((a, b) =>
           a === 'Sans catégorie' ? 1 : b === 'Sans catégorie' ? -1 : a.localeCompare(b)
         );
-        const activeCat = categoryTab !== 'all' && grouped[categoryTab] ? categoryTab : 'all';
-        const visibleCategories = activeCat === 'all' ? sortedCategories : [activeCat];
+        const activeCat = (categoryTab === 'super' || (categoryTab !== 'all' && grouped[categoryTab])) ? categoryTab : 'all';
+        const visibleCategories = activeCat === 'all' ? sortedCategories : (activeCat === 'super' ? [] : [activeCat]);
         return (
           <>
             <Tabs value={activeCat} onValueChange={setCategoryTab} className="mb-6">
@@ -568,29 +563,36 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
                     {cat} ({grouped[cat].length})
                   </TabsTrigger>
                 ))}
+                <TabsTrigger value="super" className="gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5" />Super Ingrédients
+                </TabsTrigger>
               </TabsList>
             </Tabs>
-            <div className="space-y-8">
-              {visibleCategories.map(catName => (
-                <section key={catName}>
-                  {activeCat === 'all' && (
-                    <h3 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h3>
-                  )}
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {grouped[catName].map(recipe => (
-                      <RecipeCard
-                        key={recipe.id}
-                        recipe={recipe}
-                        totalCost={totalCost(recipe)}
-                        onView={() => openDetail(recipe)}
-                        onEdit={() => openEdit(recipe)}
-                        onDelete={() => onDelete(recipe)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+            {activeCat === 'super' ? (
+              <SuperIngredientsTab onRefresh={() => { /* refresh handled internally */ }} />
+            ) : (
+              <div className="space-y-8">
+                {visibleCategories.map(catName => (
+                  <section key={catName}>
+                    {activeCat === 'all' && (
+                      <h3 className="mb-3 font-heading text-lg font-semibold text-foreground border-b border-border pb-2">{catName}</h3>
+                    )}
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {grouped[catName].map(recipe => (
+                        <RecipeCard
+                          key={recipe.id}
+                          recipe={recipe}
+                          totalCost={totalCost(recipe)}
+                          onView={() => openDetail(recipe)}
+                          onEdit={() => openEdit(recipe)}
+                          onDelete={() => onDelete(recipe)}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
           </>
         );
       })()}
