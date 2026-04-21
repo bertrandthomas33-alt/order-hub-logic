@@ -2687,3 +2687,69 @@ function RecipeEditView({
     </div>
   );
 }
+
+function IngredientCombobox({
+  ingredients,
+  value,
+  onChange,
+}: {
+  ingredients: Ingredient[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = ingredients.find(i => i.id === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="flex-1 justify-between font-normal"
+        >
+          <span className="truncate">
+            {selected ? `${selected.is_super ? '⭐ ' : ''}${selected.name}` : 'Ingrédient'}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <Command
+          filter={(val, search) => {
+            // val = ingredient.id ; we need to match against the name
+            const ing = ingredients.find(i => i.id === val);
+            if (!ing) return 0;
+            return ing.name.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Rechercher un ingrédient..." />
+          <CommandList>
+            <CommandEmpty>Aucun ingrédient trouvé.</CommandEmpty>
+            {INGREDIENT_TYPE_OPTIONS.map(typeOpt => {
+              const items = ingredients.filter(i => (i.ingredient_type || 'epicerie') === typeOpt.value);
+              if (items.length === 0) return null;
+              return (
+                <CommandGroup key={typeOpt.value} heading={typeOpt.label}>
+                  {items.map(i => (
+                    <CommandItem
+                      key={i.id}
+                      value={i.id}
+                      onSelect={(v) => {
+                        onChange(v);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', value === i.id ? 'opacity-100' : 'opacity-0')} />
+                      {i.is_super ? '⭐ ' : ''}{i.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              );
+            })}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
