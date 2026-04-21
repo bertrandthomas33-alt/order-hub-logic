@@ -91,7 +91,7 @@ type Recipe = {
   instructions: string | null;
   image_url: string | null;
   notes: string | null;
-  product?: { name: string; image_url: string | null; unit: string; category_id: string; categories: { name: string } | null };
+  product?: { name: string; image_url: string | null; unit: string; category_id: string; active?: boolean; categories: { name: string } | null };
   recipe_ingredients?: RecipeIngredient[];
   recipe_steps?: RecipeStep[];
 };
@@ -141,7 +141,7 @@ function RecettesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [recipesRes, ingredientsRes, productsRes, categoriesRes] = await Promise.all([
-      supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
+      supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, active, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
       supabase.from('ingredients').select('*, supplier_ref:suppliers(id, title)').order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
       supabase.from('categories').select('id, name').order('name'),
@@ -215,9 +215,14 @@ function RecettesPage() {
     return <Navigate to="/" />;
   }
 
-  const filtered = recipes.filter(r =>
-    r.product?.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = recipes
+    .filter(r => r.product?.name?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const aActive = a.product?.active ? 1 : 0;
+      const bActive = b.product?.active ? 1 : 0;
+      if (aActive !== bActive) return bActive - aActive;
+      return (a.product?.name || '').localeCompare(b.product?.name || '');
+    });
 
   const productsWithoutRecipe = products.filter(
     p => !recipes.some(r => r.product_id === p.id)
@@ -2230,7 +2235,7 @@ function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: R
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
   return (
-    <div className="group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
+    <div className={`group rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md ${recipe.product?.active === false ? 'opacity-60' : ''}`}>
       <div className="flex items-start gap-3">
         {recipe.product?.image_url ? (
           <img src={recipe.product.image_url} alt="" className="h-14 w-14 rounded-lg object-cover" />
@@ -2240,7 +2245,12 @@ function RecipeCard({ recipe, totalCost, onView, onEdit, onDelete }: { recipe: R
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground truncate">{recipe.product?.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-foreground truncate">{recipe.product?.name}</h3>
+            {recipe.product?.active === false && (
+              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Inactif</span>
+            )}
+          </div>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
             {totalTime > 0 && (
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{totalTime} min</span>
