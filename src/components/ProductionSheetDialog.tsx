@@ -149,33 +149,40 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         body.push(row);
       });
 
+      const clientColWidth = 10;
+      const totalColWidth = 16;
+      const productColWidth = 40;
+      const tableWidth = productColWidth + wh.clients.length * clientColWidth + totalColWidth;
+
       autoTable(doc, {
         startY: 40,
         head: [headers],
         body,
         theme: 'grid',
+        tableWidth,
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [56, 102, 65], textColor: 255, fontSize: 8, halign: 'center', valign: 'bottom', minCellHeight: 28 },
         columnStyles: {
-          0: { fontStyle: 'bold', cellWidth: 40 },
-          [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240] },
+          0: { fontStyle: 'bold', cellWidth: productColWidth },
+          [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: totalColWidth, halign: 'center' },
         },
         didParseCell: (data: any) => {
-          // Style category separator rows
           if (data.section === 'body' && data.row.raw && data.row.raw[0]?.toString().startsWith('▸')) {
             data.cell.styles.fillColor = [56, 102, 65];
             data.cell.styles.textColor = 255;
             data.cell.styles.fontStyle = 'bold';
             data.cell.styles.fontSize = 9;
           }
-          // Reserve narrow columns for rotated client headers
           if (data.section === 'head' && data.column.index > 0 && data.column.index < headers.length - 1) {
-            data.cell.styles.cellWidth = 10;
+            data.cell.styles.cellWidth = clientColWidth;
             data.cell.text = [''];
+          }
+          if (data.section === 'body' && data.column.index > 0 && data.column.index < headers.length - 1) {
+            data.cell.styles.cellWidth = clientColWidth;
+            data.cell.styles.halign = 'center';
           }
         },
         didDrawCell: (data: any) => {
-          // Draw client names rotated 45° in head cells
           if (
             data.section === 'head' &&
             data.column.index > 0 &&
