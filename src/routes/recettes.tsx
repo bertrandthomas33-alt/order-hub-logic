@@ -91,7 +91,7 @@ type Recipe = {
   instructions: string | null;
   image_url: string | null;
   notes: string | null;
-  product?: { name: string; image_url: string | null; unit: string; category_id: string; categories: { name: string } | null };
+  product?: { name: string; image_url: string | null; unit: string; category_id: string; active?: boolean; categories: { name: string } | null };
   recipe_ingredients?: RecipeIngredient[];
   recipe_steps?: RecipeStep[];
 };
