@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, ChefHat, Clock, Euro, Pencil, Trash2, Eye, ArrowLeft, X, Package, Truck, ShoppingCart, Warehouse, Sparkles, ChevronDown, ShoppingBasket, Minus, CheckCircle2, History, FileDown, Send } from 'lucide-react';
 import { usePurchaseCartStore, type PurchaseCartItem } from '@/lib/purchase-cart-store';
 import { downloadPurchaseOrderPdf, type PdfOrder } from '@/lib/purchase-order-pdf';
+import { downloadRecipePdf } from '@/lib/recipe-pdf';
 import { SuperIngredientsTab } from '@/components/SuperIngredientsTab';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -2278,6 +2279,26 @@ function RecipeDetailView({ recipe, totalCost, onBack, onEdit, onDelete }: { rec
         <div className="mb-6 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="h-5 w-5" /></Button>
           <h1 className="font-heading text-2xl font-bold text-foreground flex-1">{recipe.product?.name}</h1>
+          <Button variant="outline" size="sm" onClick={() => downloadRecipePdf({
+            title: recipe.product?.name || 'Recette',
+            category: recipe.product?.categories?.name || null,
+            yield_quantity: recipe.yield_quantity,
+            yield_unit: recipe.yield_unit,
+            prep_time_minutes: recipe.prep_time_minutes,
+            cook_time_minutes: recipe.cook_time_minutes,
+            ingredients: (recipe.recipe_ingredients || []).map(ri => ({
+              name: ri.ingredient?.name || '—',
+              quantity: ri.quantity,
+              unit: ri.unit,
+              is_super: ri.ingredient?.is_super,
+            })),
+            steps: steps.map(s => ({
+              step_number: s.step_number,
+              instruction: s.instruction,
+              duration_minutes: s.duration_minutes,
+            })),
+            notes: recipe.notes,
+          })} className="gap-2"><FileDown className="h-4 w-4" />Imprimer</Button>
           <Button variant="outline" size="sm" onClick={onEdit} className="gap-2"><Pencil className="h-4 w-4" />Modifier</Button>
           <Button variant="ghost" size="icon" className="text-destructive" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
         </div>
