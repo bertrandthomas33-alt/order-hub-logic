@@ -1001,7 +1001,7 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
                                   uvc_quantity: ing.uvc_quantity,
                                 }, qty);
                                 toast.success(`${ing.name}: +${qty} UVC ajouté(s)`);
-                                setQtyDraft(prev => ({ ...prev, [ing.id]: '1' }));
+                                setQtyDraft(prev => ({ ...prev, [ing.id]: '0' }));
                               };
                               return (
                                 <div className="flex items-center justify-center gap-1.5">
