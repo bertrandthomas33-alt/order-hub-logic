@@ -874,25 +874,70 @@ function IngredientsTab({ ingredients, onRefresh, autoEditId, onAutoEditConsumed
             const groupIngredientIds = new Set(group.items.map(i => i.id));
             const pendingItems = cartItems.filter(ci => groupIngredientIds.has(ci.ingredient.id));
             const pendingUvc = pendingItems.reduce((s, i) => s + i.quantity, 0);
+            const addAllToCart = () => {
+              let added = 0;
+              group.items.forEach(ing => {
+                const raw = qtyDraft[ing.id];
+                const qty = parseFloat(raw ?? '0') || 0;
+                if (qty <= 0) return;
+                usePurchaseCartStore.getState().addItem({
+                  id: ing.id,
+                  name: ing.name,
+                  unit: ing.unit,
+                  cost_per_unit: ing.cost_per_unit,
+                  supplier: ing.supplier,
+                  supplier_id: ing.supplier_id,
+                  supplier_title: ing.supplier_ref?.title ?? null,
+                  uvc: ing.uvc,
+                  uvc_quantity: ing.uvc_quantity,
+                }, qty);
+                setQtyDraft(prev => ({ ...prev, [ing.id]: '0' }));
+                added++;
+              });
+              if (added === 0) {
+                toast.error('Aucune quantité à commander');
+              } else {
+                toast.success(`${added} ingrédient${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''} au panier`);
+              }
+            };
+            const pendingDraftCount = group.items.filter(ing => (parseFloat(qtyDraft[ing.id] ?? '0') || 0) > 0).length;
             return (
               <div key={key} className="rounded-xl border border-border bg-card overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(key)}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
+                <div className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-muted/40">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(key)}
+                    className="flex items-center gap-2 min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
+                  >
                     <ChevronDown className={`h-4 w-4 transition-transform shrink-0 ${collapsed ? '-rotate-90' : ''}`} />
                     <span className="font-semibold text-foreground truncate">{group.title}</span>
                     <span className="text-xs text-muted-foreground shrink-0">({group.items.length})</span>
+                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {pendingItems.length > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium">
+                        <ShoppingBasket className="h-3.5 w-3.5" />
+                        Panier · {pendingItems.length} réf. · {Number(pendingUvc.toFixed(2))} UVC
+                      </span>
+                    )}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-8 gap-1.5 relative"
+                      onClick={(e) => { e.stopPropagation(); addAllToCart(); }}
+                      disabled={pendingDraftCount === 0}
+                      title={`Commander tous les ingrédients avec quantité > 0 (${pendingDraftCount})`}
+                    >
+                      <ShoppingBasket className="h-4 w-4" />
+                      Tout commander
+                      {pendingDraftCount > 0 && (
+                        <span className="ml-1 inline-flex items-center justify-center rounded-full bg-primary-foreground text-primary text-[10px] font-bold h-4 min-w-4 px-1">
+                          {pendingDraftCount}
+                        </span>
+                      )}
+                    </Button>
                   </div>
-                  {pendingItems.length > 0 && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-medium shrink-0">
-                      <ShoppingBasket className="h-3.5 w-3.5" />
-                      Commande en cours · {pendingItems.length} réf. · {Number(pendingUvc.toFixed(2))} UVC
-                    </span>
-                  )}
-                </button>
+                </div>
                 {!collapsed && (
                   <Table>
                     <TableHeader>
