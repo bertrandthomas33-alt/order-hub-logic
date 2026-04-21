@@ -127,6 +127,7 @@ export type Database = {
           cost_per_unit: number
           created_at: string
           id: string
+          ingredient_type: Database["public"]["Enums"]["ingredient_type"]
           is_super: boolean
           name: string
           stock_min: number
@@ -145,6 +146,7 @@ export type Database = {
           cost_per_unit?: number
           created_at?: string
           id?: string
+          ingredient_type?: Database["public"]["Enums"]["ingredient_type"]
           is_super?: boolean
           name: string
           stock_min?: number
@@ -163,6 +165,7 @@ export type Database = {
           cost_per_unit?: number
           created_at?: string
           id?: string
+          ingredient_type?: Database["public"]["Enums"]["ingredient_type"]
           is_super?: boolean
           name?: string
           stock_min?: number
@@ -729,6 +732,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "pdv"
+      ingredient_type:
+        | "surgele"
+        | "frais"
+        | "epicerie"
+        | "fruits_legumes"
+        | "emballage"
       order_status: "pending" | "confirmed" | "in_production" | "delivered"
       purchase_order_status: "pending" | "completed"
     }
@@ -859,6 +868,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "pdv"],
+      ingredient_type: [
+        "surgele",
+        "frais",
+        "epicerie",
+        "fruits_legumes",
+        "emballage",
+      ],
       order_status: ["pending", "confirmed", "in_production", "delivered"],
       purchase_order_status: ["pending", "completed"],
     },
