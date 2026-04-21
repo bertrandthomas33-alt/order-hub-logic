@@ -141,7 +141,7 @@ function RecettesPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [recipesRes, ingredientsRes, productsRes, categoriesRes] = await Promise.all([
-      supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
+      supabase.from('recipes').select('*, product:products(name, image_url, unit, category_id, active, categories(name)), recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*)').order('created_at', { ascending: false }),
       supabase.from('ingredients').select('*, supplier_ref:suppliers(id, title)').order('name'),
       supabase.from('products').select('id, name, image_url, unit, category_id, categories(name)').eq('active', true).order('name'),
       supabase.from('categories').select('id, name').order('name'),
