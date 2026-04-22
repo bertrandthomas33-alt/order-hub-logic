@@ -338,7 +338,7 @@ function QuickOrderTableView({
           .from('orders')
           .select('id, order_items(product_id, quantity)')
           .eq('client_id', cid)
-          .eq('delivery_date', yesterday),
+          .eq('delivery_date', today),
         supabase
           .from('product_daily_stock')
           .select('product_id, stock')
