@@ -2187,6 +2187,9 @@ function CommandesTab({ recipes, ingredients, onRefresh }: { recipes: Recipe[]; 
 function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: Ingredient[]; onRefresh: () => void; onOpenIngredient?: (id: string) => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const addToCart = usePurchaseCartStore(s => s.addItem);
+  const updateCartQty = usePurchaseCartStore(s => s.updateQuantity);
+  const removeFromCart = usePurchaseCartStore(s => s.removeItem);
+  const cartItems = usePurchaseCartStore(s => s.items);
 
   const filtered = ingredients.filter(i =>
     i.active && (
