@@ -238,6 +238,7 @@ function CataloguePage() {
                 cartItems={items}
                 addItem={addItem}
                 warehouses={warehouses}
+                activeWarehouse={activeWarehouse}
               />
             )}
           </div>
