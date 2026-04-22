@@ -477,6 +477,78 @@ function QuickOrderTableView({
 
   return (
     <div className="space-y-4">
+      {isFiniOnly && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-foreground">Date :</span>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => shiftDay(-1)}
+            aria-label="Jour précédent"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'h-9 justify-start text-left font-normal min-w-[200px] gap-2',
+                )}
+              >
+                <CalendarIcon className="h-4 w-4" />
+                <span className="capitalize">
+                  {format(selectedDate, 'EEEE d MMMM yyyy', { locale: fr })}
+                </span>
+                {isToday && (
+                  <span className="ml-auto text-xs text-primary font-semibold">Aujourd'hui</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => {
+                  if (d) {
+                    const nd = new Date(d);
+                    nd.setHours(0, 0, 0, 0);
+                    setSelectedDate(nd);
+                    setDatePickerOpen(false);
+                  }
+                }}
+                initialFocus
+                locale={fr}
+                className={cn('p-3 pointer-events-auto')}
+              />
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => shiftDay(1)}
+            aria-label="Jour suivant"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          {!isToday && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9"
+              onClick={() => {
+                const t = new Date();
+                t.setHours(0, 0, 0, 0);
+                setSelectedDate(t);
+              }}
+            >
+              Aujourd'hui
+            </Button>
+          )}
+        </div>
+      )}
       <div className="overflow-x-auto rounded-xl border border-border">
         <Table>
           <TableHeader>
