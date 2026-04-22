@@ -3,9 +3,8 @@ import { Header } from '@/components/Header';
 import { ProductCard } from '@/components/ProductCard';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Zap, LayoutGrid } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -83,7 +82,6 @@ function CataloguePage() {
 
   if (!isAuthenticated) return null;
 
-  // Products filtered by warehouse + search (ignoring active category) — used to know which categories have products
   const productsForCategoryCount = products.filter((p) => {
     const matchWarehouse = activeWarehouse === 'all' || p.categories?.warehouse_id === activeWarehouse;
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase());
@@ -104,7 +102,6 @@ function CataloguePage() {
     <div className="min-h-screen">
       <Header />
       <div className="mx-auto max-w-7xl px-4 py-4 sm:py-6 sm:px-6">
-        {/* Title + Toggle (mobile compact) */}
         <div className="mb-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <h1 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">Catalogue</h1>
@@ -124,7 +121,6 @@ function CataloguePage() {
           </Button>
         </div>
 
-        {/* Search full-width */}
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -136,7 +132,6 @@ function CataloguePage() {
           />
         </div>
 
-        {/* Warehouse tabs */}
         <div className="mb-4 -mx-4 sm:mx-0 overflow-x-auto scrollbar-none border-b border-border">
           <div className="flex w-max gap-2 px-4 sm:px-0 pb-3">
             <button
@@ -161,7 +156,6 @@ function CataloguePage() {
           </div>
         </div>
 
-        {/* Mobile category filter — native select for compactness */}
         <div className="mb-4 md:hidden">
           <select
             value={activeCategory ?? ''}
@@ -178,7 +172,6 @@ function CataloguePage() {
         </div>
 
         <div className="flex gap-6">
-          {/* Sidebar: Categories only */}
           <aside className={`hidden w-56 shrink-0 md:block ${viewMode === 'table' ? '!hidden' : ''}`}>
             <div className="sticky top-24 space-y-1">
               <h2 className="mb-3 text-lg font-bold text-foreground">Catégories</h2>
@@ -204,7 +197,6 @@ function CataloguePage() {
             </div>
           </aside>
 
-          {/* Products content */}
           <div className="flex-1">
             {viewMode === 'grid' ? (
               filteredProducts.length === 0 ? (
@@ -238,6 +230,7 @@ function CataloguePage() {
                 cartItems={items}
                 addItem={addItem}
                 warehouses={warehouses}
+                activeWarehouse={activeWarehouse}
               />
             )}
           </div>
@@ -255,6 +248,7 @@ function QuickOrderTableView({
   cartItems,
   addItem,
   warehouses,
+  activeWarehouse,
 }: {
   products: DbProduct[];
   allProducts: DbProduct[];
@@ -263,6 +257,7 @@ function QuickOrderTableView({
   cartItems: { product: { id: string }; quantity: number }[];
   addItem: (product: any, qty: number) => void;
   warehouses: DbWarehouse[];
+  activeWarehouse: string;
 }) {
   const isFiniOnly = useMemo(() => {
     if (products.length === 0) return false;
@@ -272,6 +267,127 @@ function QuickOrderTableView({
     if (finiIds.size === 0) return false;
     return products.every((p) => p.categories && finiIds.has(p.categories.warehouse_id));
   }, [products, warehouses]);
+
+  const [dailyStock, setDailyStock] = useState<Record<string, { recu: number; stock: number; perte: number }>>({});
+  const [yesterdayStock, setYesterdayStock] = useState<Record<string, number>>({});
+  const [clientId, setClientId] = useState<string | null>(null);
+  const savingTimers = useMemo(() => new Map<string, ReturnType<typeof setTimeout>>(), []);
+
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const yesterday = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }, []);
+
+  const productIdsKey = useMemo(() => products.map((p) => p.id).sort().join(','), [products]);
+
+  useEffect(() => {
+    if (!isFiniOnly) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return;
+      const { data: client } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', uid)
+        .maybeSingle();
+      const cid = client?.id ?? null;
+      if (cancelled) return;
+      setClientId(cid);
+      if (!cid) return;
+
+      const productIds = productIdsKey ? productIdsKey.split(',') : [];
+      if (productIds.length === 0) return;
+
+      const [{ data: todayRows }, { data: yOrders }, { data: yStock }] = await Promise.all([
+        supabase
+          .from('product_daily_stock')
+          .select('product_id, recu, stock, perte')
+          .eq('client_id', cid)
+          .eq('stock_date', today)
+          .in('product_id', productIds),
+        supabase
+          .from('orders')
+          .select('id, order_items(product_id, quantity)')
+          .eq('client_id', cid)
+          .eq('delivery_date', yesterday),
+        supabase
+          .from('product_daily_stock')
+          .select('product_id, stock')
+          .eq('client_id', cid)
+          .eq('stock_date', yesterday)
+          .in('product_id', productIds),
+      ]);
+
+      if (cancelled) return;
+
+      const yReceived: Record<string, number> = {};
+      (yOrders ?? []).forEach((o: any) => {
+        (o.order_items ?? []).forEach((it: any) => {
+          yReceived[it.product_id] = (yReceived[it.product_id] || 0) + Number(it.quantity);
+        });
+      });
+
+      const todayMap: Record<string, { recu: number; stock: number; perte: number }> = {};
+      (todayRows ?? []).forEach((r: any) => {
+        todayMap[r.product_id] = {
+          recu: Number(r.recu),
+          stock: Number(r.stock),
+          perte: Number(r.perte),
+        };
+      });
+
+      const next: Record<string, { recu: number; stock: number; perte: number }> = {};
+      productIds.forEach((pid) => {
+        next[pid] = todayMap[pid] ?? { recu: yReceived[pid] || 0, stock: 0, perte: 0 };
+      });
+      setDailyStock(next);
+
+      const yMap: Record<string, number> = {};
+      (yStock ?? []).forEach((r: any) => {
+        yMap[r.product_id] = Number(r.stock);
+      });
+      setYesterdayStock(yMap);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isFiniOnly, activeWarehouse, today, yesterday, productIdsKey]);
+
+  const persistRow = (productId: string, row: { recu: number; stock: number; perte: number }) => {
+    if (!clientId) return;
+    const existing = savingTimers.get(productId);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(async () => {
+      await supabase.from('product_daily_stock').upsert(
+        {
+          client_id: clientId,
+          product_id: productId,
+          stock_date: today,
+          recu: row.recu,
+          stock: row.stock,
+          perte: row.perte,
+        },
+        { onConflict: 'client_id,product_id,stock_date' },
+      );
+    }, 500);
+    savingTimers.set(productId, timer);
+  };
+
+  const updateDaily = (productId: string, field: 'recu' | 'stock' | 'perte', value: string) => {
+    const num = value === '' ? 0 : parseFloat(value);
+    if (isNaN(num) || num < 0) return;
+    setDailyStock((prev) => {
+      const current = prev[productId] || { recu: 0, stock: 0, perte: 0 };
+      const updated = { ...current, [field]: num };
+      persistRow(productId, updated);
+      return { ...prev, [productId]: updated };
+    });
+  };
 
   const grouped = useMemo(() => {
     const sorted = [...products].sort((a, b) => {
@@ -332,7 +448,7 @@ function QuickOrderTableView({
     );
   }
 
-  const colSpan = isFiniOnly ? 2 : 4;
+  const colSpan = isFiniOnly ? 6 : 4;
 
   return (
     <div className="space-y-4">
@@ -343,13 +459,17 @@ function QuickOrderTableView({
               <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
               {!isFiniOnly && <TableHead className="w-24 text-center">Prix</TableHead>}
               {!isFiniOnly && <TableHead className="w-28 text-center">Unité</TableHead>}
+              {isFiniOnly && <TableHead className="w-20 text-center">Reçu</TableHead>}
+              {isFiniOnly && <TableHead className="w-20 text-center">Dispo</TableHead>}
+              {isFiniOnly && <TableHead className="w-20 text-center">Stock</TableHead>}
+              {isFiniOnly && <TableHead className="w-20 text-center">Perte</TableHead>}
               <TableHead className="w-28 text-center">Quantité</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {grouped.map((group) => (
-              <>
-                <TableRow key={`cat-${group.catName}`}>
+              <React.Fragment key={`cat-${group.catName}`}>
+                <TableRow>
                   <TableCell
                     colSpan={colSpan}
                     className="bg-primary/10 font-heading font-bold text-primary text-sm py-1.5 sticky left-0"
@@ -360,6 +480,8 @@ function QuickOrderTableView({
                 {group.items.map((product) => {
                   const cartItem = cartItems.find((i) => i.product.id === product.id);
                   const currentQty = quantities[product.id] || 0;
+                  const ds = dailyStock[product.id] || { recu: 0, stock: 0, perte: 0 };
+                  const dispo = (ds.recu || 0) + (yesterdayStock[product.id] || 0);
                   return (
                     <TableRow key={product.id}>
                       <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap pl-6">
@@ -385,6 +507,50 @@ function QuickOrderTableView({
                           {product.unit}
                         </TableCell>
                       )}
+                      {isFiniOnly && (
+                        <TableCell className="text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={ds.recu || ''}
+                            onChange={(e) => updateDaily(product.id, 'recu', e.target.value)}
+                            className="w-16 mx-auto text-center h-8"
+                            placeholder="0"
+                          />
+                        </TableCell>
+                      )}
+                      {isFiniOnly && (
+                        <TableCell className="text-center text-sm font-semibold">
+                          {dispo}
+                        </TableCell>
+                      )}
+                      {isFiniOnly && (
+                        <TableCell className="text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={ds.stock || ''}
+                            onChange={(e) => updateDaily(product.id, 'stock', e.target.value)}
+                            className="w-16 mx-auto text-center h-8"
+                            placeholder="0"
+                          />
+                        </TableCell>
+                      )}
+                      {isFiniOnly && (
+                        <TableCell className="text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={ds.perte || ''}
+                            onChange={(e) => updateDaily(product.id, 'perte', e.target.value)}
+                            className="w-16 mx-auto text-center h-8"
+                            placeholder="0"
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="text-center">
                         <Input
                           type="number"
@@ -399,7 +565,7 @@ function QuickOrderTableView({
                     </TableRow>
                   );
                 })}
-              </>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>
