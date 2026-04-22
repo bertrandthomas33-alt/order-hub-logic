@@ -410,6 +410,11 @@ function QuickOrderTableView({
       const current = prev[productId] || { recu: 0, stock: 0, perte: 0 };
       const updated = { ...current, [field]: num };
       persistRow(productId, updated);
+      // Auto-suggestion quantité à commander = Ventes - Stock
+      // Ventes = Dispo - Stock - Perte ; Dispo = recu + stock veille
+      const dispo = (updated.recu || 0) + (yesterdayStock[productId] || 0);
+      const suggested = Math.max(0, dispo - 2 * (updated.stock || 0) - (updated.perte || 0));
+      setQuantities((q) => ({ ...q, [productId]: suggested }));
       return { ...prev, [productId]: updated };
     });
   };
