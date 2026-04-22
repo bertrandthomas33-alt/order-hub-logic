@@ -2340,7 +2340,40 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                               {ing.name}
                             </TableCell>
                             <TableCell className="text-muted-foreground">{ing.uvc || '—'}</TableCell>
-                            <TableCell className="text-right font-medium">{Number(qty.toFixed(2))} {ing.unit}</TableCell>
+                            <TableCell className="text-right">
+                              {(() => {
+                                const cartItem = cartItems.find(c => c.ingredient.id === ing.id);
+                                const orderQty = cartItem?.quantity ?? 0;
+                                return (
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    className="h-8 w-20 ml-auto text-right"
+                                    value={orderQty}
+                                    onChange={e => {
+                                      const v = Math.max(0, parseInt(e.target.value) || 0);
+                                      if (cartItem) {
+                                        if (v === 0) removeFromCart(ing.id);
+                                        else updateCartQty(ing.id, v);
+                                      } else if (v > 0) {
+                                        addToCart({
+                                          id: ing.id,
+                                          name: ing.name,
+                                          unit: ing.unit,
+                                          cost_per_unit: Number((ing as any).cost_per_unit) || 0,
+                                          supplier: ing.supplier || null,
+                                          supplier_id: (ing as any).supplier_id || null,
+                                          supplier_title: ing.supplier_ref?.title || null,
+                                          uvc: (ing as any).uvc || null,
+                                          uvc_quantity: Number((ing as any).uvc_quantity) || 1,
+                                        }, v);
+                                      }
+                                    }}
+                                  />
+                                );
+                              })()}
+                            </TableCell>
                             <TableCell className="text-right">
                               <Input
                                 type="number"
