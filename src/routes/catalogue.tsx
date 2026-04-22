@@ -277,13 +277,33 @@ function QuickOrderTableView({
   const [yesterdayStock, setYesterdayStock] = useState<Record<string, number>>({});
   const [clientId, setClientId] = useState<string | null>(null);
   const savingTimers = useMemo(() => new Map<string, ReturnType<typeof setTimeout>>(), []);
-
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const yesterday = useMemo(() => {
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  const today = useMemo(() => format(selectedDate, 'yyyy-MM-dd'), [selectedDate]);
+  const yesterday = useMemo(() => {
+    const d = new Date(selectedDate);
     d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
-  }, []);
+    return format(d, 'yyyy-MM-dd');
+  }, [selectedDate]);
+
+  const isToday = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t.getTime() === selectedDate.getTime();
+  }, [selectedDate]);
+
+  const shiftDay = (delta: number) => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + delta);
+      return d;
+    });
+  };
 
   const productIdsKey = useMemo(() => products.map((p) => p.id).sort().join(','), [products]);
 
