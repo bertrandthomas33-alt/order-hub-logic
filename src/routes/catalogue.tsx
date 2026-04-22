@@ -351,7 +351,7 @@ function QuickOrderTableView({
               <>
                 <TableRow key={`cat-${group.catName}`}>
                   <TableCell
-                    colSpan={4}
+                    colSpan={colSpan}
                     className="bg-primary/10 font-heading font-bold text-primary text-sm py-1.5 sticky left-0"
                   >
                     {group.catIcon} {group.catName}
@@ -364,18 +364,27 @@ function QuickOrderTableView({
                     <TableRow key={product.id}>
                       <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap pl-6">
                         {product.name}
+                        {isFiniOnly && (
+                          <span className="ml-2 text-muted-foreground font-normal">
+                            ({Number(product.price).toFixed(2)} €)
+                          </span>
+                        )}
                         {cartItem && (
                           <span className="ml-2 text-xs text-primary font-semibold">
                             (déjà {cartItem.quantity} au panier)
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-center text-sm">
-                        {Number(product.price).toFixed(2)} €
-                      </TableCell>
-                      <TableCell className="text-center text-sm text-muted-foreground">
-                        {product.unit}
-                      </TableCell>
+                      {!isFiniOnly && (
+                        <TableCell className="text-center text-sm">
+                          {Number(product.price).toFixed(2)} €
+                        </TableCell>
+                      )}
+                      {!isFiniOnly && (
+                        <TableCell className="text-center text-sm text-muted-foreground">
+                          {product.unit}
+                        </TableCell>
+                      )}
                       <TableCell className="text-center">
                         <Input
                           type="number"
