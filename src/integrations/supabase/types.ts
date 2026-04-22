@@ -288,6 +288,57 @@ export type Database = {
           },
         ]
       }
+      product_daily_stock: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          perte: number
+          product_id: string
+          recu: number
+          stock: number
+          stock_date: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          perte?: number
+          product_id: string
+          recu?: number
+          stock?: number
+          stock_date?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          perte?: number
+          product_id?: string
+          recu?: number
+          stock?: number
+          stock_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_daily_stock_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_daily_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
