@@ -2317,8 +2317,8 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                       <TableRow>
                         <TableHead>Ingrédient</TableHead>
                         <TableHead>UVC</TableHead>
-                        <TableHead className="text-right">À commander</TableHead>
-                        <TableHead className="text-right">Seuil min</TableHead>
+                        <TableHead className="text-right">À commander<div className="text-[10px] font-normal text-muted-foreground">UVC</div></TableHead>
+                        <TableHead className="text-right">Seuil min<div className="text-[10px] font-normal text-muted-foreground">UVC</div></TableHead>
                         <TableHead className="text-right">Statut</TableHead>
                         <TableHead className="w-56 text-right">Mise à jour</TableHead>
                       </TableRow>
