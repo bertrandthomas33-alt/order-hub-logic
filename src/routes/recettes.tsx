@@ -194,6 +194,11 @@ function RecettesPage() {
     let added = 0;
     lowStock.forEach(ing => {
       if (inCart.has(ing.id)) return;
+      const uvcQty = Number(ing.uvc_quantity) || 1;
+      const stockMin = Number((ing as any).stock_min) || 0;
+      const stockQty = Number((ing as any).stock_quantity) || 0;
+      // Quantité d'UVC nécessaire pour repasser au-dessus du seuil min
+      const needed = Math.max(1, Math.ceil((stockMin - stockQty) / uvcQty) || 1);
       addToCart({
         id: ing.id,
         name: ing.name,
@@ -203,8 +208,8 @@ function RecettesPage() {
         supplier_id: ing.supplier_id || null,
         supplier_title: ing.supplier_ref?.title || null,
         uvc: ing.uvc || null,
-        uvc_quantity: Number(ing.uvc_quantity) || 1,
-      }, 1);
+        uvc_quantity: uvcQty,
+      }, needed);
       added++;
     });
     if (added > 0) {
