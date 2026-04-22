@@ -237,6 +237,7 @@ function CataloguePage() {
                 setQuantities={setQuantities}
                 cartItems={items}
                 addItem={addItem}
+                warehouses={warehouses}
               />
             )}
           </div>
@@ -253,6 +254,7 @@ function QuickOrderTableView({
   setQuantities,
   cartItems,
   addItem,
+  warehouses,
 }: {
   products: DbProduct[];
   allProducts: DbProduct[];
@@ -260,7 +262,17 @@ function QuickOrderTableView({
   setQuantities: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   cartItems: { product: { id: string }; quantity: number }[];
   addItem: (product: any, qty: number) => void;
+  warehouses: DbWarehouse[];
 }) {
+  const isFiniOnly = useMemo(() => {
+    if (products.length === 0) return false;
+    const finiIds = new Set(
+      warehouses.filter((w) => w.name.toLowerCase().includes('fini')).map((w) => w.id),
+    );
+    if (finiIds.size === 0) return false;
+    return products.every((p) => p.categories && finiIds.has(p.categories.warehouse_id));
+  }, [products, warehouses]);
+
   const grouped = useMemo(() => {
     const sorted = [...products].sort((a, b) => {
       const catA = a.categories?.name || '';
@@ -320,6 +332,8 @@ function QuickOrderTableView({
     );
   }
 
+  const colSpan = isFiniOnly ? 2 : 4;
+
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto rounded-xl border border-border">
@@ -327,8 +341,8 @@ function QuickOrderTableView({
           <TableHeader>
             <TableRow>
               <TableHead className="sticky left-0 z-10 bg-card font-bold">Produit</TableHead>
-              <TableHead className="w-24 text-center">Prix</TableHead>
-              <TableHead className="w-28 text-center">Unité</TableHead>
+              {!isFiniOnly && <TableHead className="w-24 text-center">Prix</TableHead>}
+              {!isFiniOnly && <TableHead className="w-28 text-center">Unité</TableHead>}
               <TableHead className="w-28 text-center">Quantité</TableHead>
             </TableRow>
           </TableHeader>
@@ -337,7 +351,7 @@ function QuickOrderTableView({
               <>
                 <TableRow key={`cat-${group.catName}`}>
                   <TableCell
-                    colSpan={4}
+                    colSpan={colSpan}
                     className="bg-primary/10 font-heading font-bold text-primary text-sm py-1.5 sticky left-0"
                   >
                     {group.catIcon} {group.catName}
@@ -350,18 +364,27 @@ function QuickOrderTableView({
                     <TableRow key={product.id}>
                       <TableCell className="sticky left-0 z-10 bg-card font-medium whitespace-nowrap pl-6">
                         {product.name}
+                        {isFiniOnly && (
+                          <span className="ml-2 text-muted-foreground font-normal">
+                            ({Number(product.price).toFixed(2)} €)
+                          </span>
+                        )}
                         {cartItem && (
                           <span className="ml-2 text-xs text-primary font-semibold">
                             (déjà {cartItem.quantity} au panier)
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-center text-sm">
-                        {Number(product.price).toFixed(2)} €
-                      </TableCell>
-                      <TableCell className="text-center text-sm text-muted-foreground">
-                        {product.unit}
-                      </TableCell>
+                      {!isFiniOnly && (
+                        <TableCell className="text-center text-sm">
+                          {Number(product.price).toFixed(2)} €
+                        </TableCell>
+                      )}
+                      {!isFiniOnly && (
+                        <TableCell className="text-center text-sm text-muted-foreground">
+                          {product.unit}
+                        </TableCell>
+                      )}
                       <TableCell className="text-center">
                         <Input
                           type="number"
