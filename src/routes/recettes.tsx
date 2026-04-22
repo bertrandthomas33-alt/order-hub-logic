@@ -2375,16 +2375,38 @@ function StockTab({ ingredients, onRefresh, onOpenIngredient }: { ingredients: I
                               })()}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                className="h-8 w-24 ml-auto text-right"
-                                defaultValue={min}
-                                onBlur={e => {
-                                  const v = parseFloat(e.target.value) || 0;
-                                  if (v !== Number(min)) handleUpdateMin(ing.id, v);
-                                }}
-                              />
+                              <div className="flex items-center justify-end gap-1">
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-muted-foreground leading-none mb-0.5">UVC</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    disabled={uvcQty <= 0}
+                                    className="h-8 w-20 text-right"
+                                    defaultValue={uvcQty > 0 ? Number((Number(min) / uvcQty).toFixed(3)) : ''}
+                                    key={`min-uvc-${ing.id}-${min}`}
+                                    onBlur={e => {
+                                      const v = parseFloat(e.target.value) || 0;
+                                      const newMin = v * uvcQty;
+                                      if (newMin !== Number(min)) handleUpdateMin(ing.id, newMin);
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex flex-col items-end">
+                                  <span className="text-[10px] text-muted-foreground leading-none mb-0.5">{ing.unit}</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="h-8 w-24 text-right"
+                                    defaultValue={min}
+                                    key={`min-base-${ing.id}-${min}`}
+                                    onBlur={e => {
+                                      const v = parseFloat(e.target.value) || 0;
+                                      if (v !== Number(min)) handleUpdateMin(ing.id, v);
+                                    }}
+                                  />
+                                </div>
+                              </div>
                             </TableCell>
                             <TableCell className="text-right">
                               <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${isLow ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
