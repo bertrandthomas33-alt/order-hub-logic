@@ -149,7 +149,9 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         body.push(row);
       });
 
-      const clientColWidth = 10;
+      const fewClients = wh.clients.length <= 2;
+      const longestClientName = wh.clients.reduce((max, client) => Math.max(max, client.length), 0);
+      const clientColWidth = fewClients ? Math.min(32, Math.max(22, longestClientName * 1.8)) : 10;
       const totalColWidth = 16;
       const productColWidth = 40;
       const tableWidth = productColWidth + wh.clients.length * clientColWidth + totalColWidth;
@@ -161,7 +163,14 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         theme: 'grid',
         tableWidth,
         styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [56, 102, 65], textColor: 255, fontSize: 8, halign: 'center', valign: 'bottom', minCellHeight: 28 },
+        headStyles: {
+          fillColor: [56, 102, 65],
+          textColor: 255,
+          fontSize: 8,
+          halign: 'center',
+          valign: fewClients ? 'middle' : 'bottom',
+          minCellHeight: fewClients ? 16 : 28,
+        },
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: productColWidth },
           [headers.length - 1]: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: totalColWidth, halign: 'center' },
@@ -175,7 +184,9 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
           }
           if (data.section === 'head' && data.column.index > 0 && data.column.index < headers.length - 1) {
             data.cell.styles.cellWidth = clientColWidth;
-            data.cell.text = [''];
+            if (!fewClients) {
+              data.cell.text = [''];
+            }
           }
           if (data.section === 'body' && data.column.index > 0 && data.column.index < headers.length - 1) {
             data.cell.styles.cellWidth = clientColWidth;
@@ -184,6 +195,7 @@ export function ProductionSheetDialog({ open, onOpenChange, orders, onRefresh }:
         },
         didDrawCell: (data: any) => {
           if (
+            !fewClients &&
             data.section === 'head' &&
             data.column.index > 0 &&
             data.column.index < headers.length - 1
