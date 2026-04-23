@@ -708,6 +708,54 @@ export type Database = {
         }
         Relationships: []
       }
+      tickets_caisse: {
+        Row: {
+          client_id: string
+          created_at: string
+          date: string
+          id: string
+          lines: Json
+          payment_method: string
+          subtotal: number
+          ticket_number: string
+          total: number
+          tva_amount: number
+          tva_rate: number
+          updated_at: string
+          warehouse_id: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          lines?: Json
+          payment_method?: string
+          subtotal?: number
+          ticket_number: string
+          total?: number
+          tva_amount?: number
+          tva_rate?: number
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          lines?: Json
+          payment_method?: string
+          subtotal?: number
+          ticket_number?: string
+          total?: number
+          tva_amount?: number
+          tva_rate?: number
+          updated_at?: string
+          warehouse_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
