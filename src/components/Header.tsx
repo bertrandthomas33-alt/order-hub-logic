@@ -41,6 +41,15 @@ export function Header() {
               Catalogue
             </Link>
           )}
+          {(role === 'pdv' || role === 'admin') && (
+            <Link
+              to="/caisse"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              activeProps={{ className: 'rounded-lg px-4 py-2 text-sm font-medium bg-accent text-foreground' }}
+            >
+              Caisse
+            </Link>
+          )}
           {role === 'admin' && (
             <Link
               to="/backoffice"
@@ -103,6 +112,11 @@ export function Header() {
           {(role === 'pdv' || role === 'admin') && (
             <Link to="/catalogue" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
               Catalogue
+            </Link>
+          )}
+          {(role === 'pdv' || role === 'admin') && (
+            <Link to="/caisse" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
+              Caisse
             </Link>
           )}
           {role === 'admin' && (

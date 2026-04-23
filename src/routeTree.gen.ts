@@ -13,6 +13,7 @@ import { Route as RecettesRouteImport } from './routes/recettes'
 import { Route as PanierRouteImport } from './routes/panier'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CatalogueRouteImport } from './routes/catalogue'
+import { Route as CaisseRouteImport } from './routes/caisse'
 import { Route as BackofficeRouteImport } from './routes/backoffice'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -36,6 +37,11 @@ const CatalogueRoute = CatalogueRouteImport.update({
   path: '/catalogue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaisseRoute = CaisseRouteImport.update({
+  id: '/caisse',
+  path: '/caisse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficeRoute = BackofficeRouteImport.update({
   id: '/backoffice',
   path: '/backoffice',
@@ -50,6 +56,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/backoffice': typeof BackofficeRoute
+  '/caisse': typeof CaisseRoute
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backoffice': typeof BackofficeRoute
+  '/caisse': typeof CaisseRoute
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/backoffice': typeof BackofficeRoute
+  '/caisse': typeof CaisseRoute
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/backoffice'
+    | '/caisse'
     | '/catalogue'
     | '/login'
     | '/panier'
     | '/recettes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/backoffice' | '/catalogue' | '/login' | '/panier' | '/recettes'
+  to:
+    | '/'
+    | '/backoffice'
+    | '/caisse'
+    | '/catalogue'
+    | '/login'
+    | '/panier'
+    | '/recettes'
   id:
     | '__root__'
     | '/'
     | '/backoffice'
+    | '/caisse'
     | '/catalogue'
     | '/login'
     | '/panier'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BackofficeRoute: typeof BackofficeRoute
+  CaisseRoute: typeof CaisseRoute
   CatalogueRoute: typeof CatalogueRoute
   LoginRoute: typeof LoginRoute
   PanierRoute: typeof PanierRoute
@@ -132,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CatalogueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/caisse': {
+      id: '/caisse'
+      path: '/caisse'
+      fullPath: '/caisse'
+      preLoaderRoute: typeof CaisseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice': {
       id: '/backoffice'
       path: '/backoffice'
@@ -152,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackofficeRoute: BackofficeRoute,
+  CaisseRoute: CaisseRoute,
   CatalogueRoute: CatalogueRoute,
   LoginRoute: LoginRoute,
   PanierRoute: PanierRoute,
