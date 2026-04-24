@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, redirect, useLocation } from '@tanstack/react-router';
 import { ShoppingCart, BarChart3, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +9,18 @@ export const Route = createFileRoute('/caisse')({
     if (!session) {
       throw redirect({ to: '/login', search: { redirect: location.pathname } });
     }
-    // Only show hub on exact /caisse path
-    if (location.pathname !== '/caisse') return;
   },
-  component: CaisseHub,
+  component: CaisseLayout,
 });
+
+function CaisseLayout() {
+  const location = useLocation();
+  if (location.pathname !== '/caisse') {
+    return <Outlet />;
+  }
+  return <CaisseHub />;
+}
+
 
 function CaisseHub() {
   return (
