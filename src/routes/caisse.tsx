@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import {
   WifiOff,
   Printer,
   Receipt,
+  LogOut,
 } from 'lucide-react';
 import { TpePaymentModal } from '@/components/caisse/TpePaymentModal';
 import { CategoryFilterModal } from '@/components/caisse/CategoryFilterModal';
