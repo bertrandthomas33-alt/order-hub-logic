@@ -350,18 +350,31 @@ function CaisseEnregistreuse() {
             <Receipt className="h-5 w-5" />
           </Button>
         </div>
-        <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-          <SelectTrigger className="w-[220px] bg-gray-700 border-gray-600">
-            <SelectValue placeholder="Point de vente" />
-          </SelectTrigger>
-          <SelectContent className="bg-gray-700 border-gray-600">
-            {warehouses.map((w) => (
-              <SelectItem key={w.id} value={w.id} className="text-white">
-                {w.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+            <SelectTrigger className="w-[220px] bg-gray-700 border-gray-600">
+              <SelectValue placeholder="Point de vente" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-700 border-gray-600">
+              {warehouses.map((w) => (
+                <SelectItem key={w.id} value={w.id} className="text-white">
+                  {w.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link to="/">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-300 hover:text-white hover:bg-gray-700 gap-2"
+              title="Quitter la caisse"
+            >
+              <LogOut className="h-4 w-4" />
+              Quitter
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Main */}
