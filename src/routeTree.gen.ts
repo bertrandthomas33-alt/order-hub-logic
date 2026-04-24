@@ -13,9 +13,9 @@ import { Route as RecettesRouteImport } from './routes/recettes'
 import { Route as PanierRouteImport } from './routes/panier'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CatalogueRouteImport } from './routes/catalogue'
-import { Route as CaisseRouteImport } from './routes/caisse'
 import { Route as BackofficeRouteImport } from './routes/backoffice'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CaissePosRouteImport } from './routes/caisse.pos'
 
 const RecettesRoute = RecettesRouteImport.update({
   id: '/recettes',
@@ -37,11 +37,6 @@ const CatalogueRoute = CatalogueRouteImport.update({
   path: '/catalogue',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CaisseRoute = CaisseRouteImport.update({
-  id: '/caisse',
-  path: '/caisse',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BackofficeRoute = BackofficeRouteImport.update({
   id: '/backoffice',
   path: '/backoffice',
@@ -52,73 +47,78 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaissePosRoute = CaissePosRouteImport.update({
+  id: '/caisse/pos',
+  path: '/caisse/pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/backoffice': typeof BackofficeRoute
-  '/caisse': typeof CaisseRoute
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
   '/recettes': typeof RecettesRoute
+  '/caisse/pos': typeof CaissePosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/backoffice': typeof BackofficeRoute
-  '/caisse': typeof CaisseRoute
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
   '/recettes': typeof RecettesRoute
+  '/caisse/pos': typeof CaissePosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/backoffice': typeof BackofficeRoute
-  '/caisse': typeof CaisseRoute
   '/catalogue': typeof CatalogueRoute
   '/login': typeof LoginRoute
   '/panier': typeof PanierRoute
   '/recettes': typeof RecettesRoute
+  '/caisse/pos': typeof CaissePosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/backoffice'
-    | '/caisse'
     | '/catalogue'
     | '/login'
     | '/panier'
     | '/recettes'
+    | '/caisse/pos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/backoffice'
-    | '/caisse'
     | '/catalogue'
     | '/login'
     | '/panier'
     | '/recettes'
+    | '/caisse/pos'
   id:
     | '__root__'
     | '/'
     | '/backoffice'
-    | '/caisse'
     | '/catalogue'
     | '/login'
     | '/panier'
     | '/recettes'
+    | '/caisse/pos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BackofficeRoute: typeof BackofficeRoute
-  CaisseRoute: typeof CaisseRoute
   CatalogueRoute: typeof CatalogueRoute
   LoginRoute: typeof LoginRoute
   PanierRoute: typeof PanierRoute
   RecettesRoute: typeof RecettesRoute
+  CaissePosRoute: typeof CaissePosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,13 +151,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CatalogueRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/caisse': {
-      id: '/caisse'
-      path: '/caisse'
-      fullPath: '/caisse'
-      preLoaderRoute: typeof CaisseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/backoffice': {
       id: '/backoffice'
       path: '/backoffice'
@@ -172,17 +165,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/caisse/pos': {
+      id: '/caisse/pos'
+      path: '/caisse/pos'
+      fullPath: '/caisse/pos'
+      preLoaderRoute: typeof CaissePosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BackofficeRoute: BackofficeRoute,
-  CaisseRoute: CaisseRoute,
   CatalogueRoute: CatalogueRoute,
   LoginRoute: LoginRoute,
   PanierRoute: PanierRoute,
   RecettesRoute: RecettesRoute,
+  CaissePosRoute: CaissePosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

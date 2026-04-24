@@ -34,7 +34,7 @@ import {
 } from '@/services/printer/EpsonPrinterService';
 import { useAuth } from '@/hooks/use-auth';
 
-export const Route = createFileRoute('/caisse')({
+export const Route = createFileRoute('/caisse/pos')({
   component: CaisseEnregistreuse,
 });
 
