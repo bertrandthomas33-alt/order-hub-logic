@@ -45,35 +45,35 @@ function CaisseHub() {
 
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="grid w-full max-w-4xl gap-6 sm:grid-cols-2">
-          <Link to="/caisse/pos" className="group">
-            <div className="h-full rounded-2xl border border-border bg-card p-8 transition-all hover:border-primary hover:shadow-lg">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground mb-6 group-hover:scale-110 transition-transform">
-                <ShoppingCart className="h-7 w-7" />
-              </div>
-              <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Caisse</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Encaisser une vente, gérer le panier, paiement carte ou espèces et impression du ticket.
-              </p>
-              <div className="mt-6 inline-flex items-center text-sm font-medium text-primary">
-                Ouvrir la caisse →
-              </div>
+          <div className="h-full rounded-2xl border border-border bg-card p-8 transition-all hover:border-primary hover:shadow-lg">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-primary-foreground mb-6">
+              <ShoppingCart className="h-7 w-7" />
             </div>
-          </Link>
+            <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Caisse</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Encaisser une vente, gérer le panier, paiement carte ou espèces et impression du ticket.
+            </p>
+            <Link to="/caisse/pos" className="mt-6 inline-flex">
+              <Button className="gap-2">
+                Ouvrir la caisse
+              </Button>
+            </Link>
+          </div>
 
-          <Link to="/caisse/backoffice" className="group">
-            <div className="h-full rounded-2xl border border-border bg-card p-8 transition-all hover:border-primary hover:shadow-lg">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary text-secondary-foreground mb-6 group-hover:scale-110 transition-transform">
-                <BarChart3 className="h-7 w-7" />
-              </div>
-              <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Back-office</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Consulter l'historique des tickets, suivre les ventes par mode de paiement et clôturer la caisse.
-              </p>
-              <div className="mt-6 inline-flex items-center text-sm font-medium text-primary">
-                Ouvrir le back-office →
-              </div>
+          <div className="h-full rounded-2xl border border-border bg-card p-8 transition-all hover:border-primary hover:shadow-lg">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary text-secondary-foreground mb-6">
+              <BarChart3 className="h-7 w-7" />
             </div>
-          </Link>
+            <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Back-office</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Consulter l'historique des tickets, suivre les ventes par mode de paiement et clôturer la caisse.
+            </p>
+            <Link to="/caisse/backoffice" className="mt-6 inline-flex">
+              <Button variant="outline" className="gap-2">
+                Ouvrir le back-office
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
