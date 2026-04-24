@@ -21,15 +21,20 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">J</span>
-          </div>
-          <div className="hidden sm:block">
-            <span className="font-heading text-lg font-bold text-foreground">JDC</span>
-            <span className="font-heading text-lg font-medium text-muted-foreground"> Distribution</span>
-          </div>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <span className="text-lg font-bold text-primary-foreground">J</span>
+            </div>
+            <div className="hidden sm:block">
+              <div className="flex items-baseline gap-1">
+                <span className="font-heading text-lg font-bold text-foreground">JDC</span>
+                <span className="font-heading text-lg font-medium text-muted-foreground">Distribution</span>
+              </div>
+              <span className="font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground">Caisse</span>
+            </div>
+          </Link>
+        </div>
 
         <nav className="hidden items-center gap-1 md:flex">
           {(role === 'pdv' || role === 'admin') && (
@@ -39,15 +44,6 @@ export function Header() {
               activeProps={{ className: 'rounded-lg px-4 py-2 text-sm font-medium bg-accent text-foreground' }}
             >
               Catalogue
-            </Link>
-          )}
-          {(role === 'pdv' || role === 'admin') && (
-            <Link
-              to="/caisse"
-              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              activeProps={{ className: 'rounded-lg px-4 py-2 text-sm font-medium bg-accent text-foreground' }}
-            >
-              Caisse
             </Link>
           )}
           {role === 'admin' && (
@@ -112,11 +108,6 @@ export function Header() {
           {(role === 'pdv' || role === 'admin') && (
             <Link to="/catalogue" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
               Catalogue
-            </Link>
-          )}
-          {(role === 'pdv' || role === 'admin') && (
-            <Link to="/caisse" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
-              Caisse
             </Link>
           )}
           {role === 'admin' && (
