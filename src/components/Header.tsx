@@ -110,11 +110,6 @@ export function Header() {
               Catalogue
             </Link>
           )}
-          {(role === 'pdv' || role === 'admin') && (
-            <Link to="/caisse" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
-              Caisse
-            </Link>
-          )}
           {role === 'admin' && (
             <Link to="/backoffice" className="block rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent" onClick={() => setMobileOpen(false)}>
               Back-office
