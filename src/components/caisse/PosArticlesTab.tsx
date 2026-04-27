@@ -1,23 +1,10 @@
 import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Search, Plus } from 'lucide-react';
-
-interface Warehouse {
-  id: string;
-  name: string;
-}
 
 interface Category {
   id: string;
@@ -34,70 +21,31 @@ interface Product {
   active: boolean;
 }
 
-interface PosOverride {
-  product_id: string;
-  visible: boolean;
-}
-
 export function PosArticlesTab() {
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [warehouseId, setWarehouseId] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from('warehouses')
-        .select('id, name')
-        .eq('active', true)
-        .order('name');
-      setWarehouses(data || []);
-      if (data && data.length > 0) setWarehouseId(data[0].id);
-    })();
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (!warehouseId) return;
-    loadData(warehouseId);
-  }, [warehouseId]);
-
-  const loadData = async (whId: string) => {
+  const loadData = async () => {
     setLoading(true);
     try {
       const { data: cats } = await supabase
         .from('categories')
         .select('id, name, warehouse_id')
-        .eq('warehouse_id', whId)
         .order('name');
-      const catRows = (cats || []) as Category[];
-      setCategories(catRows);
-      const catIds = catRows.map((c) => c.id);
+      setCategories((cats || []) as Category[]);
 
-      let prods: Product[] = [];
-      if (catIds.length > 0) {
-        const { data: p } = await supabase
-          .from('products')
-          .select('id, name, category_id, price_b2c, price, active')
-          .in('category_id', catIds)
-          .order('name');
-        prods = (p || []) as Product[];
-      }
-      setProducts(prods);
-
-      const { data: ov } = await supabase
-        .from('pos_products')
-        .select('product_id, visible')
-        .eq('warehouse_id', whId);
-      const map: Record<string, boolean> = {};
-      ((ov || []) as PosOverride[]).forEach((r) => {
-        map[r.product_id] = r.visible;
-      });
-      setOverrides(map);
+      const { data: p } = await supabase
+        .from('products')
+        .select('id, name, category_id, price_b2c, price, active')
+        .order('name');
+      setProducts((p || []) as Product[]);
     } catch (e: any) {
       toast.error('Erreur de chargement');
     } finally {
@@ -105,46 +53,8 @@ export function PosArticlesTab() {
     }
   };
 
-  // Visible par défaut si actif et prix b2c > 0, sinon override décide
-  const computeVisible = (p: Product) => {
-    if (p.id in overrides) return overrides[p.id];
-    return p.active && (p.price_b2c || 0) > 0;
-  };
-
-  const toggleVisible = async (p: Product, value: boolean) => {
-    const { error } = await supabase
-      .from('pos_products')
-      .upsert(
-        {
-          warehouse_id: warehouseId,
-          product_id: p.id,
-          visible: value,
-        },
-        { onConflict: 'warehouse_id,product_id' }
-      );
-    if (error) {
-      toast.error('Échec de la mise à jour');
-      return;
-    }
-    setOverrides((prev) => ({ ...prev, [p.id]: value }));
-  };
-
-  const resetOverride = async (p: Product) => {
-    const { error } = await supabase
-      .from('pos_products')
-      .delete()
-      .eq('warehouse_id', warehouseId)
-      .eq('product_id', p.id);
-    if (error) {
-      toast.error('Échec');
-      return;
-    }
-    setOverrides((prev) => {
-      const n = { ...prev };
-      delete n[p.id];
-      return n;
-    });
-  };
+  // Visible par défaut sur le POS si actif et prix B2C > 0
+  const computeVisible = (p: Product) => p.active && (p.price_b2c || 0) > 0;
 
   const catName = (id: string) => categories.find((c) => c.id === id)?.name || '—';
 
@@ -209,20 +119,6 @@ export function PosArticlesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[220px]">
-          <Select value={warehouseId} onValueChange={setWarehouseId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Point de vente" />
-            </SelectTrigger>
-            <SelectContent>
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -237,7 +133,7 @@ export function PosArticlesTab() {
           Inclure les inactifs
         </label>
         <div className="text-sm text-muted-foreground ml-auto">
-          {visibleCount} / {products.length} visibles
+          {visibleCount} / {products.length} visibles sur le POS
         </div>
       </div>
 
@@ -257,20 +153,18 @@ export function PosArticlesTab() {
                   <th className="text-right px-4 py-2 w-40">Prix B2C</th>
                   <th className="text-center px-4 py-2 w-24">Actif BO</th>
                   <th className="text-center px-4 py-2 w-28">Visible POS</th>
-                  <th className="text-right px-4 py-2 w-24"></th>
                 </tr>
               </thead>
               <tbody>
                 {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => (
                   <Fragment key={group.category.id}>
                     <tr key={`h-${group.category.id}`} className="bg-muted/30">
-                      <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <td colSpan={4} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {group.category.name} <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
                       </td>
                     </tr>
                     {group.items.map((p) => {
                       const visible = computeVisible(p);
-                      const overridden = p.id in overrides;
                       const isEditing = p.id in editingPrice;
                       return (
                         <tr key={p.id} className="border-t border-border hover:bg-muted/30">
@@ -303,22 +197,7 @@ export function PosArticlesTab() {
                             </span>
                           </td>
                           <td className="px-4 py-2 text-center">
-                            <Switch
-                              checked={visible}
-                              onCheckedChange={(v) => toggleVisible(p, v)}
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            {overridden && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => resetOverride(p)}
-                                title="Revenir au comportement par défaut"
-                              >
-                                Défaut
-                              </Button>
-                            )}
+                            <Switch checked={visible} disabled />
                           </td>
                         </tr>
                       );
