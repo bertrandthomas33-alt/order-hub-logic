@@ -164,15 +164,30 @@ function CaisseEnregistreuse() {
       return;
     }
 
-    const { data: prods } = await supabase
+    // Charger tous les produits des catégories de ce point de vente
+    const { data: allProds } = await supabase
       .from('products')
-      .select('id, name, category_id, price_b2c, price, image_url')
+      .select('id, name, category_id, price_b2c, price, image_url, active')
       .in('category_id', catIds)
-      .eq('active', true)
-      .gt('price_b2c', 0)
       .order('name');
 
-    setProducts(prods || []);
+    // Charger les overrides POS pour ce warehouse
+    const { data: overridesData } = await supabase
+      .from('pos_products')
+      .select('product_id, visible')
+      .eq('warehouse_id', warehouseId);
+    const overrides: Record<string, boolean> = {};
+    ((overridesData || []) as any[]).forEach((r) => {
+      overrides[r.product_id] = r.visible;
+    });
+
+    // Visible si override = true, sinon défaut = actif + price_b2c > 0
+    const visibleProds = ((allProds || []) as any[]).filter((p) => {
+      if (p.id in overrides) return overrides[p.id];
+      return p.active && (p.price_b2c || 0) > 0;
+    });
+
+    setProducts(visibleProds);
 
     const allCats = catRows.map((c) => c.name);
     setAllCategories(allCats);

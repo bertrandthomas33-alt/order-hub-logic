@@ -288,6 +288,33 @@ export type Database = {
           },
         ]
       }
+      pos_products: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          updated_at: string
+          visible: boolean
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          updated_at?: string
+          visible?: boolean
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          updated_at?: string
+          visible?: boolean
+          warehouse_id?: string
+        }
+        Relationships: []
+      }
       product_daily_stock: {
         Row: {
           client_id: string
