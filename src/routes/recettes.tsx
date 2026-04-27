@@ -8,6 +8,7 @@ import { usePurchaseCartStore, type PurchaseCartItem } from '@/lib/purchase-cart
 import { downloadPurchaseOrderPdf, type PdfOrder } from '@/lib/purchase-order-pdf';
 import { downloadRecipePdf } from '@/lib/recipe-pdf';
 import { SuperIngredientsTab } from '@/components/SuperIngredientsTab';
+import { ImportRecipesDialog } from '@/components/ImportRecipesDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -505,6 +506,7 @@ function RecettesPage() {
               openDetail={openDetail}
               openEdit={openEdit}
               onDelete={(r) => setRecipeToDelete(r)}
+              onRefresh={fetchData}
             />
           </TabsContent>
 
@@ -566,7 +568,7 @@ function DeleteRecipeDialog({ recipe, onCancel, onConfirm }: { recipe: Recipe | 
 }
 
 // ===== FICHES TAB =====
-function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit, onDelete }: {
+function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe, categories, showCreateDialog, setShowCreateDialog, handleCreateRecipe, handleCreateNewProductRecipe, totalCost, openDetail, openEdit, onDelete, onRefresh }: {
   filtered: Recipe[];
   search: string;
   setSearch: (s: string) => void;
@@ -581,12 +583,14 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
   openDetail: (r: Recipe) => void;
   openEdit: (r: Recipe) => void;
   onDelete: (r: Recipe) => void;
+  onRefresh: () => void | Promise<void>;
 }) {
   const [categoryTab, setCategoryTab] = useState<string>('all');
   const [createMode, setCreateMode] = useState<'new' | 'existing'>('new');
   const [newName, setNewName] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [newPriceB2c, setNewPriceB2c] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   useEffect(() => {
     if (showCreateDialog) {
@@ -604,10 +608,21 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           <h2 className="font-heading text-xl font-bold text-foreground">Fiches Techniques</h2>
           <p className="text-sm text-muted-foreground">Recettes et coûts de revient de vos produits finis</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-          <Plus className="h-4 w-4" />Nouvelle fiche
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowImportDialog(true)} className="gap-2">
+            <FileDown className="h-4 w-4 rotate-180" />Importer
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+            <Plus className="h-4 w-4" />Nouvelle fiche
+          </Button>
+        </div>
       </div>
+
+      <ImportRecipesDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImported={() => { onRefresh(); }}
+      />
 
       <div className="relative mb-6 max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
