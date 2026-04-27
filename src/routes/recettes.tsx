@@ -8,6 +8,7 @@ import { usePurchaseCartStore, type PurchaseCartItem } from '@/lib/purchase-cart
 import { downloadPurchaseOrderPdf, type PdfOrder } from '@/lib/purchase-order-pdf';
 import { downloadRecipePdf } from '@/lib/recipe-pdf';
 import { SuperIngredientsTab } from '@/components/SuperIngredientsTab';
+import { ImportRecipesDialog } from '@/components/ImportRecipesDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
