@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
