@@ -177,13 +177,12 @@ export function PosArticlesTab() {
                 {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => (
                   <Fragment key={group.category.id}>
                     <tr key={`h-${group.category.id}`} className="bg-muted/30">
-                      <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <td colSpan={4} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {group.category.name} <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
                       </td>
                     </tr>
                     {group.items.map((p) => {
                       const visible = computeVisible(p);
-                      const overridden = p.id in overrides;
                       const isEditing = p.id in editingPrice;
                       return (
                         <tr key={p.id} className="border-t border-border hover:bg-muted/30">
@@ -216,22 +215,7 @@ export function PosArticlesTab() {
                             </span>
                           </td>
                           <td className="px-4 py-2 text-center">
-                            <Switch
-                              checked={visible}
-                              onCheckedChange={(v) => toggleVisible(p, v)}
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            {overridden && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => resetOverride(p)}
-                                title="Revenir au comportement par défaut"
-                              >
-                                Défaut
-                              </Button>
-                            )}
+                            <Switch checked={visible} disabled />
                           </td>
                         </tr>
                       );
