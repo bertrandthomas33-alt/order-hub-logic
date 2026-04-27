@@ -288,6 +288,42 @@ export type Database = {
           },
         ]
       }
+      pos_hidden_categories: {
+        Row: {
+          category_name: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      pos_hidden_products: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: []
+      }
       pos_products: {
         Row: {
           created_at: string
