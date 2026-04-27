@@ -506,6 +506,7 @@ function RecettesPage() {
               openDetail={openDetail}
               openEdit={openEdit}
               onDelete={(r) => setRecipeToDelete(r)}
+              onRefresh={fetchData}
             />
           </TabsContent>
 
