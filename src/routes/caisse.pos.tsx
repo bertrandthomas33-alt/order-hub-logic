@@ -355,18 +355,6 @@ function CaisseEnregistreuse() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-            <SelectTrigger className="w-[220px] bg-gray-700 border-gray-600">
-              <SelectValue placeholder="Point de vente" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-700 border-gray-600">
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id} className="text-white">
-                  {w.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Link to="/">
             <Button
               variant="ghost"
