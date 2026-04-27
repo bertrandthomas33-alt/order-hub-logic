@@ -608,10 +608,21 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
           <h2 className="font-heading text-xl font-bold text-foreground">Fiches Techniques</h2>
           <p className="text-sm text-muted-foreground">Recettes et coûts de revient de vos produits finis</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-          <Plus className="h-4 w-4" />Nouvelle fiche
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowImportDialog(true)} className="gap-2">
+            <FileDown className="h-4 w-4 rotate-180" />Importer
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+            <Plus className="h-4 w-4" />Nouvelle fiche
+          </Button>
+        </div>
       </div>
+
+      <ImportRecipesDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        onImported={() => { onRefresh(); }}
+      />
 
       <div className="relative mb-6 max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
