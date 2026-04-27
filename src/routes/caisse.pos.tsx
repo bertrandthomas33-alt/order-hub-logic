@@ -146,10 +146,16 @@ function CaisseEnregistreuse() {
   };
 
   const fetchCategoriesAndProducts = async () => {
-    const { data: cats } = await supabase
-      .from('categories')
-      .select('id, name, warehouse_id')
-      .order('name');
+    const [{ data: cats }, { data: allProds }, { data: hCats }, { data: hProds }] =
+      await Promise.all([
+        supabase.from('categories').select('id, name, warehouse_id').order('name'),
+        supabase
+          .from('products')
+          .select('id, name, category_id, price_b2c, price, image_url, active')
+          .order('name'),
+        supabase.from('pos_hidden_categories').select('category_name'),
+        supabase.from('pos_hidden_products').select('product_id'),
+      ]);
     const catRows = cats || [];
     setCategoryRows(catRows);
 
@@ -160,15 +166,17 @@ function CaisseEnregistreuse() {
       return;
     }
 
-    // Charger tous les produits actifs avec un prix B2C
-    const { data: allProds } = await supabase
-      .from('products')
-      .select('id, name, category_id, price_b2c, price, image_url, active')
-      .order('name');
+    const hiddenCatNames = new Set((hCats || []).map((r: any) => r.category_name));
+    const hiddenProdIds = new Set((hProds || []).map((r: any) => r.product_id));
 
-    const visibleProds = ((allProds || []) as any[]).filter(
-      (p) => p.active && (p.price_b2c || 0) > 0
-    );
+    // Article visible : actif + prix B2C > 0 + non masqué + catégorie non masquée
+    const visibleProds = ((allProds || []) as any[]).filter((p) => {
+      if (!p.active || !((p.price_b2c || 0) > 0)) return false;
+      if (hiddenProdIds.has(p.id)) return false;
+      const c = catRows.find((c) => c.id === p.category_id);
+      if (!c || hiddenCatNames.has(c.name)) return false;
+      return true;
+    });
 
     setProducts(visibleProds);
 
