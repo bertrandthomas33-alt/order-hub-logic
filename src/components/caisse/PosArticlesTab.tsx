@@ -323,7 +323,7 @@ export function PosArticlesTab() {
                         </tr>
                       );
                     })}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
