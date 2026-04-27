@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -148,11 +148,61 @@ export function PosArticlesTab() {
 
   const catName = (id: string) => categories.find((c) => c.id === id)?.name || '—';
 
+  const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
+
+  const savePrice = async (p: Product) => {
+    const raw = editingPrice[p.id];
+    if (raw === undefined) return;
+    const value = parseFloat(raw.replace(',', '.'));
+    if (isNaN(value) || value < 0) {
+      toast.error('Prix invalide');
+      return;
+    }
+    if (value === Number(p.price_b2c || 0)) {
+      setEditingPrice((prev) => {
+        const n = { ...prev };
+        delete n[p.id];
+        return n;
+      });
+      return;
+    }
+    const { error } = await supabase
+      .from('products')
+      .update({ price_b2c: value })
+      .eq('id', p.id);
+    if (error) {
+      toast.error('Échec de la mise à jour du prix');
+      return;
+    }
+    setProducts((prev) =>
+      prev.map((it) => (it.id === p.id ? { ...it, price_b2c: value } : it))
+    );
+    setEditingPrice((prev) => {
+      const n = { ...prev };
+      delete n[p.id];
+      return n;
+    });
+    toast.success('Prix mis à jour');
+  };
+
   const filtered = products.filter((p) => {
     if (!showInactive && !p.active) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  // Groupage par catégorie
+  const grouped = categories
+    .map((c) => ({
+      category: c,
+      items: filtered.filter((p) => p.category_id === c.id),
+    }))
+    .filter((g) => g.items.length > 0)
+    .sort((a, b) => a.category.name.localeCompare(b.category.name));
+
+  const uncategorized = filtered.filter(
+    (p) => !categories.some((c) => c.id === p.category_id)
+  );
 
   const visibleCount = products.filter((p) => computeVisible(p)).length;
 
@@ -201,61 +251,80 @@ export function PosArticlesTab() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0">
+              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0 z-10">
                 <tr>
                   <th className="text-left px-4 py-2">Article</th>
-                  <th className="text-left px-4 py-2">Catégorie</th>
-                  <th className="text-right px-4 py-2">Prix B2C</th>
-                  <th className="text-center px-4 py-2">Actif BO</th>
-                  <th className="text-center px-4 py-2">Visible POS</th>
-                  <th className="text-right px-4 py-2"></th>
+                  <th className="text-right px-4 py-2 w-40">Prix B2C</th>
+                  <th className="text-center px-4 py-2 w-24">Actif BO</th>
+                  <th className="text-center px-4 py-2 w-28">Visible POS</th>
+                  <th className="text-right px-4 py-2 w-24"></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
-                  const visible = computeVisible(p);
-                  const overridden = p.id in overrides;
-                  return (
-                    <tr key={p.id} className="border-t border-border hover:bg-muted/30">
-                      <td className="px-4 py-2 font-medium">{p.name}</td>
-                      <td className="px-4 py-2 text-muted-foreground">
-                        {catName(p.category_id)}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {Number(p.price_b2c || 0).toFixed(2)} €
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
-                            p.active
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {p.active ? 'Oui' : 'Non'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <Switch
-                          checked={visible}
-                          onCheckedChange={(v) => toggleVisible(p, v)}
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {overridden && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => resetOverride(p)}
-                            title="Revenir au comportement par défaut"
-                          >
-                            Défaut
-                          </Button>
-                        )}
+                {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => (
+                  <Fragment key={group.category.id}>
+                    <tr key={`h-${group.category.id}`} className="bg-muted/30">
+                      <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.category.name} <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
                       </td>
                     </tr>
-                  );
-                })}
+                    {group.items.map((p) => {
+                      const visible = computeVisible(p);
+                      const overridden = p.id in overrides;
+                      const isEditing = p.id in editingPrice;
+                      return (
+                        <tr key={p.id} className="border-t border-border hover:bg-muted/30">
+                          <td className="px-4 py-2 font-medium">{p.name}</td>
+                          <td className="px-4 py-2 text-right">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={isEditing ? editingPrice[p.id] : Number(p.price_b2c || 0).toFixed(2)}
+                              onChange={(e) =>
+                                setEditingPrice((prev) => ({ ...prev, [p.id]: e.target.value }))
+                              }
+                              onBlur={() => isEditing && savePrice(p)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                              }}
+                              className="h-8 text-right ml-auto w-24"
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
+                                p.active
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {p.active ? 'Oui' : 'Non'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <Switch
+                              checked={visible}
+                              onCheckedChange={(v) => toggleVisible(p, v)}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            {overridden && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => resetOverride(p)}
+                                title="Revenir au comportement par défaut"
+                              >
+                                Défaut
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
+                ))}
               </tbody>
             </table>
           )}
