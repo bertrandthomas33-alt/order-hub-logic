@@ -137,20 +137,6 @@ export function PosArticlesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[220px]">
-          <Select value={warehouseId} onValueChange={setWarehouseId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Point de vente" />
-            </SelectTrigger>
-            <SelectContent>
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -165,7 +151,7 @@ export function PosArticlesTab() {
           Inclure les inactifs
         </label>
         <div className="text-sm text-muted-foreground ml-auto">
-          {visibleCount} / {products.length} visibles
+          {visibleCount} / {products.length} visibles sur le POS
         </div>
       </div>
 
