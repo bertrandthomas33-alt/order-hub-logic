@@ -1,12 +1,13 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Receipt, CreditCard, Banknote, TrendingUp, Package } from 'lucide-react';
+import { ArrowLeft, Receipt, CreditCard, Banknote, TrendingUp, Package, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PosArticlesTab } from '@/components/caisse/PosArticlesTab';
+import { PosConfigTab } from '@/components/caisse/PosConfigTab';
 
 export const Route = createFileRoute('/caisse/backoffice')({
   beforeLoad: async ({ location }) => {
