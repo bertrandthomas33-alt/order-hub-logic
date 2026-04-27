@@ -63,6 +63,10 @@ function CaisseBackoffice() {
               <Package className="h-4 w-4" />
               Articles
             </TabsTrigger>
+            <TabsTrigger value="config" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Configuration
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="tickets">
@@ -71,6 +75,10 @@ function CaisseBackoffice() {
 
           <TabsContent value="articles">
             <PosArticlesTab />
+          </TabsContent>
+
+          <TabsContent value="config">
+            <PosConfigTab />
           </TabsContent>
         </Tabs>
       </div>
