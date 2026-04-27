@@ -148,11 +148,61 @@ export function PosArticlesTab() {
 
   const catName = (id: string) => categories.find((c) => c.id === id)?.name || '—';
 
+  const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
+
+  const savePrice = async (p: Product) => {
+    const raw = editingPrice[p.id];
+    if (raw === undefined) return;
+    const value = parseFloat(raw.replace(',', '.'));
+    if (isNaN(value) || value < 0) {
+      toast.error('Prix invalide');
+      return;
+    }
+    if (value === Number(p.price_b2c || 0)) {
+      setEditingPrice((prev) => {
+        const n = { ...prev };
+        delete n[p.id];
+        return n;
+      });
+      return;
+    }
+    const { error } = await supabase
+      .from('products')
+      .update({ price_b2c: value })
+      .eq('id', p.id);
+    if (error) {
+      toast.error('Échec de la mise à jour du prix');
+      return;
+    }
+    setProducts((prev) =>
+      prev.map((it) => (it.id === p.id ? { ...it, price_b2c: value } : it))
+    );
+    setEditingPrice((prev) => {
+      const n = { ...prev };
+      delete n[p.id];
+      return n;
+    });
+    toast.success('Prix mis à jour');
+  };
+
   const filtered = products.filter((p) => {
     if (!showInactive && !p.active) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  // Groupage par catégorie
+  const grouped = categories
+    .map((c) => ({
+      category: c,
+      items: filtered.filter((p) => p.category_id === c.id),
+    }))
+    .filter((g) => g.items.length > 0)
+    .sort((a, b) => a.category.name.localeCompare(b.category.name));
+
+  const uncategorized = filtered.filter(
+    (p) => !categories.some((c) => c.id === p.category_id)
+  );
 
   const visibleCount = products.filter((p) => computeVisible(p)).length;
 
