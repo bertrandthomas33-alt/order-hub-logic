@@ -40,64 +40,30 @@ interface PosOverride {
 }
 
 export function PosArticlesTab() {
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [warehouseId, setWarehouseId] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from('warehouses')
-        .select('id, name')
-        .eq('active', true)
-        .order('name');
-      setWarehouses(data || []);
-      if (data && data.length > 0) setWarehouseId(data[0].id);
-    })();
+    loadData();
   }, []);
 
-  useEffect(() => {
-    if (!warehouseId) return;
-    loadData(warehouseId);
-  }, [warehouseId]);
-
-  const loadData = async (whId: string) => {
+  const loadData = async () => {
     setLoading(true);
     try {
       const { data: cats } = await supabase
         .from('categories')
         .select('id, name, warehouse_id')
-        .eq('warehouse_id', whId)
         .order('name');
-      const catRows = (cats || []) as Category[];
-      setCategories(catRows);
-      const catIds = catRows.map((c) => c.id);
+      setCategories((cats || []) as Category[]);
 
-      let prods: Product[] = [];
-      if (catIds.length > 0) {
-        const { data: p } = await supabase
-          .from('products')
-          .select('id, name, category_id, price_b2c, price, active')
-          .in('category_id', catIds)
-          .order('name');
-        prods = (p || []) as Product[];
-      }
-      setProducts(prods);
-
-      const { data: ov } = await supabase
-        .from('pos_products')
-        .select('product_id, visible')
-        .eq('warehouse_id', whId);
-      const map: Record<string, boolean> = {};
-      ((ov || []) as PosOverride[]).forEach((r) => {
-        map[r.product_id] = r.visible;
-      });
-      setOverrides(map);
+      const { data: p } = await supabase
+        .from('products')
+        .select('id, name, category_id, price_b2c, price, active')
+        .order('name');
+      setProducts((p || []) as Product[]);
     } catch (e: any) {
       toast.error('Erreur de chargement');
     } finally {
@@ -105,46 +71,8 @@ export function PosArticlesTab() {
     }
   };
 
-  // Visible par défaut si actif et prix b2c > 0, sinon override décide
-  const computeVisible = (p: Product) => {
-    if (p.id in overrides) return overrides[p.id];
-    return p.active && (p.price_b2c || 0) > 0;
-  };
-
-  const toggleVisible = async (p: Product, value: boolean) => {
-    const { error } = await supabase
-      .from('pos_products')
-      .upsert(
-        {
-          warehouse_id: warehouseId,
-          product_id: p.id,
-          visible: value,
-        },
-        { onConflict: 'warehouse_id,product_id' }
-      );
-    if (error) {
-      toast.error('Échec de la mise à jour');
-      return;
-    }
-    setOverrides((prev) => ({ ...prev, [p.id]: value }));
-  };
-
-  const resetOverride = async (p: Product) => {
-    const { error } = await supabase
-      .from('pos_products')
-      .delete()
-      .eq('warehouse_id', warehouseId)
-      .eq('product_id', p.id);
-    if (error) {
-      toast.error('Échec');
-      return;
-    }
-    setOverrides((prev) => {
-      const n = { ...prev };
-      delete n[p.id];
-      return n;
-    });
-  };
+  // Visible par défaut sur le POS si actif et prix B2C > 0
+  const computeVisible = (p: Product) => p.active && (p.price_b2c || 0) > 0;
 
   const catName = (id: string) => categories.find((c) => c.id === id)?.name || '—';
 
