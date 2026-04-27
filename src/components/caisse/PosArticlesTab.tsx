@@ -4,20 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Search, Plus } from 'lucide-react';
-
-interface Warehouse {
-  id: string;
-  name: string;
-}
 
 interface Category {
   id: string;
@@ -32,11 +20,6 @@ interface Product {
   price_b2c: number;
   price: number;
   active: boolean;
-}
-
-interface PosOverride {
-  product_id: string;
-  visible: boolean;
 }
 
 export function PosArticlesTab() {
