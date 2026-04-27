@@ -124,10 +124,8 @@ function CaisseEnregistreuse() {
   }, [clientId, role]);
 
   useEffect(() => {
-    if (selectedWarehouse) {
-      fetchCategoriesAndProducts(selectedWarehouse);
-    }
-  }, [selectedWarehouse]);
+    fetchCategoriesAndProducts();
+  }, []);
 
   const fetchWarehouses = async () => {
     if (role === 'pdv' && clientId) {
@@ -147,49 +145,40 @@ function CaisseEnregistreuse() {
     }
   };
 
-  const fetchCategoriesAndProducts = async (warehouseId: string) => {
+  const fetchCategoriesAndProducts = async () => {
     const { data: cats } = await supabase
       .from('categories')
       .select('id, name, warehouse_id')
-      .eq('warehouse_id', warehouseId)
       .order('name');
     const catRows = cats || [];
     setCategoryRows(catRows);
 
-    const catIds = catRows.map((c) => c.id);
-    if (catIds.length === 0) {
+    if (catRows.length === 0) {
       setProducts([]);
       setAllCategories([]);
       setCategories([]);
       return;
     }
 
-    // Charger tous les produits des catégories de ce point de vente
+    // Charger tous les produits actifs avec un prix B2C
     const { data: allProds } = await supabase
       .from('products')
       .select('id, name, category_id, price_b2c, price, image_url, active')
-      .in('category_id', catIds)
       .order('name');
 
-    // Charger les overrides POS pour ce warehouse
-    const { data: overridesData } = await supabase
-      .from('pos_products')
-      .select('product_id, visible')
-      .eq('warehouse_id', warehouseId);
-    const overrides: Record<string, boolean> = {};
-    ((overridesData || []) as any[]).forEach((r) => {
-      overrides[r.product_id] = r.visible;
-    });
-
-    // Visible si override = true, sinon défaut = actif + price_b2c > 0
-    const visibleProds = ((allProds || []) as any[]).filter((p) => {
-      if (p.id in overrides) return overrides[p.id];
-      return p.active && (p.price_b2c || 0) > 0;
-    });
+    const visibleProds = ((allProds || []) as any[]).filter(
+      (p) => p.active && (p.price_b2c || 0) > 0
+    );
 
     setProducts(visibleProds);
 
-    const allCats = catRows.map((c) => c.name);
+    // Catégories uniques (par nom) qui contiennent au moins un produit visible
+    const catNamesWithProducts = new Set<string>();
+    visibleProds.forEach((p) => {
+      const c = catRows.find((c) => c.id === p.category_id);
+      if (c) catNamesWithProducts.add(c.name);
+    });
+    const allCats = Array.from(catNamesWithProducts).sort();
     setAllCategories(allCats);
     const visibles = allCats.filter((c) => !excludedCategories.includes(c));
     setCategories(visibles);
@@ -366,18 +355,6 @@ function CaisseEnregistreuse() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-            <SelectTrigger className="w-[220px] bg-gray-700 border-gray-600">
-              <SelectValue placeholder="Point de vente" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-700 border-gray-600">
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id} className="text-white">
-                  {w.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Link to="/">
             <Button
               variant="ghost"
