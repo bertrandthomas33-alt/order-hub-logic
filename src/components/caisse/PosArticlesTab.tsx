@@ -262,7 +262,7 @@ export function PosArticlesTab() {
               </thead>
               <tbody>
                 {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => (
-                  <>
+                  <Fragment key={group.category.id}>
                     <tr key={`h-${group.category.id}`} className="bg-muted/30">
                       <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {group.category.name} <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
