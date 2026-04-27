@@ -251,61 +251,80 @@ export function PosArticlesTab() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0">
+              <thead className="bg-muted/50 text-xs uppercase text-muted-foreground sticky top-0 z-10">
                 <tr>
                   <th className="text-left px-4 py-2">Article</th>
-                  <th className="text-left px-4 py-2">Catégorie</th>
-                  <th className="text-right px-4 py-2">Prix B2C</th>
-                  <th className="text-center px-4 py-2">Actif BO</th>
-                  <th className="text-center px-4 py-2">Visible POS</th>
-                  <th className="text-right px-4 py-2"></th>
+                  <th className="text-right px-4 py-2 w-40">Prix B2C</th>
+                  <th className="text-center px-4 py-2 w-24">Actif BO</th>
+                  <th className="text-center px-4 py-2 w-28">Visible POS</th>
+                  <th className="text-right px-4 py-2 w-24"></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
-                  const visible = computeVisible(p);
-                  const overridden = p.id in overrides;
-                  return (
-                    <tr key={p.id} className="border-t border-border hover:bg-muted/30">
-                      <td className="px-4 py-2 font-medium">{p.name}</td>
-                      <td className="px-4 py-2 text-muted-foreground">
-                        {catName(p.category_id)}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {Number(p.price_b2c || 0).toFixed(2)} €
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
-                            p.active
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
-                        >
-                          {p.active ? 'Oui' : 'Non'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        <Switch
-                          checked={visible}
-                          onCheckedChange={(v) => toggleVisible(p, v)}
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        {overridden && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => resetOverride(p)}
-                            title="Revenir au comportement par défaut"
-                          >
-                            Défaut
-                          </Button>
-                        )}
+                {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => (
+                  <>
+                    <tr key={`h-${group.category.id}`} className="bg-muted/30">
+                      <td colSpan={5} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {group.category.name} <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
                       </td>
                     </tr>
-                  );
-                })}
+                    {group.items.map((p) => {
+                      const visible = computeVisible(p);
+                      const overridden = p.id in overrides;
+                      const isEditing = p.id in editingPrice;
+                      return (
+                        <tr key={p.id} className="border-t border-border hover:bg-muted/30">
+                          <td className="px-4 py-2 font-medium">{p.name}</td>
+                          <td className="px-4 py-2 text-right">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={isEditing ? editingPrice[p.id] : Number(p.price_b2c || 0).toFixed(2)}
+                              onChange={(e) =>
+                                setEditingPrice((prev) => ({ ...prev, [p.id]: e.target.value }))
+                              }
+                              onBlur={() => isEditing && savePrice(p)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                              }}
+                              className="h-8 text-right ml-auto w-24"
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-xs ${
+                                p.active
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {p.active ? 'Oui' : 'Non'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <Switch
+                              checked={visible}
+                              onCheckedChange={(v) => toggleVisible(p, v)}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            {overridden && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => resetOverride(p)}
+                                title="Revenir au comportement par défaut"
+                              >
+                                Défaut
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </>
+                ))}
               </tbody>
             </table>
           )}
