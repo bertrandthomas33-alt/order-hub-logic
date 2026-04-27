@@ -590,6 +590,7 @@ function FichesTab({ filtered, search, setSearch, loading, productsWithoutRecipe
   const [newName, setNewName] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [newPriceB2c, setNewPriceB2c] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   useEffect(() => {
     if (showCreateDialog) {
