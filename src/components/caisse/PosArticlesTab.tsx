@@ -171,7 +171,6 @@ export function PosArticlesTab() {
                   <th className="text-right px-4 py-2 w-40">Prix B2C</th>
                   <th className="text-center px-4 py-2 w-24">Actif BO</th>
                   <th className="text-center px-4 py-2 w-28">Visible POS</th>
-                  <th className="text-right px-4 py-2 w-24"></th>
                 </tr>
               </thead>
               <tbody>
