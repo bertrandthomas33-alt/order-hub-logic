@@ -26,7 +26,7 @@ interface Product {
   active: boolean;
 }
 
-interface Warehouse {
+interface Client {
   id: string;
   name: string;
 }
