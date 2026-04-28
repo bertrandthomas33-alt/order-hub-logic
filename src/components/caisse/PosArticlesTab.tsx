@@ -241,7 +241,8 @@ export function PosArticlesTab() {
                       );
                     })}
                   </Fragment>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}
