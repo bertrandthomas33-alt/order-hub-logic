@@ -33,11 +33,11 @@ interface Warehouse {
 
 interface HiddenCatRow {
   category_name: string;
-  warehouse_id: string | null;
+  client_id: string | null;
 }
 interface HiddenProdRow {
   product_id: string;
-  warehouse_id: string | null;
+  client_id: string | null;
 }
 
 const GLOBAL = '__global__';
@@ -48,7 +48,7 @@ export function PosConfigTab() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [hiddenCats, setHiddenCats] = useState<HiddenCatRow[]>([]);
   const [hiddenProds, setHiddenProds] = useState<HiddenProdRow[]>([]);
-  const [scope, setScope] = useState<string>(GLOBAL); // GLOBAL ou warehouse_id
+  const [scope, setScope] = useState<string>(GLOBAL); // GLOBAL ou client_id
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -67,8 +67,8 @@ export function PosConfigTab() {
             .select('id, name, category_id, price_b2c, active')
             .order('name'),
           supabase.from('warehouses').select('id, name').eq('active', true).order('name'),
-          supabase.from('pos_hidden_categories').select('category_name, warehouse_id'),
-          supabase.from('pos_hidden_products').select('product_id, warehouse_id'),
+          supabase.from('pos_hidden_categories').select('category_name, client_id'),
+          supabase.from('pos_hidden_products').select('product_id, client_id'),
         ]);
 
       setCategories((cats || []) as Category[]);
@@ -87,50 +87,50 @@ export function PosConfigTab() {
 
   const isCatHidden = (name: string) =>
     hiddenCats.some(
-      (r) => r.category_name === name && (r.warehouse_id ?? null) === currentWh,
+      (r) => r.category_name === name && (r.client_id ?? null) === currentWh,
     );
   const isProdHidden = (id: string) =>
     hiddenProds.some(
-      (r) => r.product_id === id && (r.warehouse_id ?? null) === currentWh,
+      (r) => r.product_id === id && (r.client_id ?? null) === currentWh,
     );
 
   const toggleCategory = async (name: string, visible: boolean) => {
     if (visible) {
       let q = supabase.from('pos_hidden_categories').delete().eq('category_name', name);
-      q = currentWh ? q.eq('warehouse_id', currentWh) : q.is('warehouse_id', null);
+      q = currentWh ? q.eq('client_id', currentWh) : q.is('client_id', null);
       const { error } = await q;
       if (error) return toast.error('Échec');
       setHiddenCats((prev) =>
         prev.filter(
-          (r) => !(r.category_name === name && (r.warehouse_id ?? null) === currentWh),
+          (r) => !(r.category_name === name && (r.client_id ?? null) === currentWh),
         ),
       );
     } else {
       const { error } = await supabase
         .from('pos_hidden_categories')
-        .insert({ category_name: name, warehouse_id: currentWh });
+        .insert({ category_name: name, client_id: currentWh });
       if (error) return toast.error('Échec');
-      setHiddenCats((prev) => [...prev, { category_name: name, warehouse_id: currentWh }]);
+      setHiddenCats((prev) => [...prev, { category_name: name, client_id: currentWh }]);
     }
   };
 
   const toggleProduct = async (id: string, visible: boolean) => {
     if (visible) {
       let q = supabase.from('pos_hidden_products').delete().eq('product_id', id);
-      q = currentWh ? q.eq('warehouse_id', currentWh) : q.is('warehouse_id', null);
+      q = currentWh ? q.eq('client_id', currentWh) : q.is('client_id', null);
       const { error } = await q;
       if (error) return toast.error('Échec');
       setHiddenProds((prev) =>
         prev.filter(
-          (r) => !(r.product_id === id && (r.warehouse_id ?? null) === currentWh),
+          (r) => !(r.product_id === id && (r.client_id ?? null) === currentWh),
         ),
       );
     } else {
       const { error } = await supabase
         .from('pos_hidden_products')
-        .insert({ product_id: id, warehouse_id: currentWh });
+        .insert({ product_id: id, client_id: currentWh });
       if (error) return toast.error('Échec');
-      setHiddenProds((prev) => [...prev, { product_id: id, warehouse_id: currentWh }]);
+      setHiddenProds((prev) => [...prev, { product_id: id, client_id: currentWh }]);
     }
   };
 
