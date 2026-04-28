@@ -35,8 +35,8 @@ export function Header() {
           </Link>
           {(role === 'pdv' || role === 'admin') && (
             <Link to="/caisse" className="flex items-center gap-3 ml-2 pl-3 border-l border-border">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-                <span className="text-lg font-bold text-secondary-foreground">C</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+                <span className="text-lg font-bold text-primary-foreground">C</span>
               </div>
               <span className="hidden sm:inline font-heading text-lg font-medium text-muted-foreground">Caisse</span>
             </Link>
