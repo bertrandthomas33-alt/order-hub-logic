@@ -91,6 +91,17 @@ function TicketsPanel() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'today' | 'week' | 'all'>('today');
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clientFilter, setClientFilter] = useState<string>('all');
+
+  useEffect(() => {
+    supabase
+      .from('clients')
+      .select('id, name')
+      .eq('active', true)
+      .order('name')
+      .then(({ data }) => setClients(data || []));
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -110,6 +121,10 @@ function TicketsPanel() {
         query = query.gte('date', start.toISOString());
       }
 
+      if (clientFilter !== 'all') {
+        query = query.eq('client_id', clientFilter);
+      }
+
       const { data, error } = await query.limit(500);
       if (error) {
         toast.error('Erreur de chargement');
@@ -119,7 +134,7 @@ function TicketsPanel() {
       setLoading(false);
     };
     load();
-  }, [filter]);
+  }, [filter, clientFilter]);
 
   const totalAll = tickets.reduce((s, t) => s + Number(t.total), 0);
   const totalCard = tickets
@@ -129,9 +144,11 @@ function TicketsPanel() {
     .filter((t) => t.payment_method === 'cash')
     .reduce((s, t) => s + Number(t.total), 0);
 
+  const clientNameById = new Map(clients.map((c) => [c.id, c.name]));
+
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {(['today', 'week', 'all'] as const).map((f) => (
           <Button
             key={f}
@@ -142,6 +159,19 @@ function TicketsPanel() {
             {f === 'today' ? "Aujourd'hui" : f === 'week' ? '7 derniers jours' : 'Tout'}
           </Button>
         ))}
+        <div className="ml-auto">
+          <Select value={clientFilter} onValueChange={setClientFilter}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Point de vente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les points de vente</SelectItem>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
