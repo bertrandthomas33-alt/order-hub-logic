@@ -153,8 +153,8 @@ function CaisseEnregistreuse() {
           .from('products')
           .select('id, name, category_id, price_b2c, price, image_url, active')
           .order('name'),
-        supabase.from('pos_hidden_categories').select('category_name'),
-        supabase.from('pos_hidden_products').select('product_id'),
+        supabase.from('pos_hidden_categories').select('category_name, warehouse_id'),
+        supabase.from('pos_hidden_products').select('product_id, warehouse_id'),
       ]);
     const catRows = cats || [];
     setCategoryRows(catRows);
@@ -166,8 +166,19 @@ function CaisseEnregistreuse() {
       return;
     }
 
-    const hiddenCatNames = new Set((hCats || []).map((r: any) => r.category_name));
-    const hiddenProdIds = new Set((hProds || []).map((r: any) => r.product_id));
+    // Filtrage par warehouse : on applique les règles globales (warehouse_id NULL)
+    // + celles du point de vente sélectionné
+    const wh = selectedWarehouse || null;
+    const hiddenCatNames = new Set(
+      (hCats || [])
+        .filter((r: any) => !r.warehouse_id || r.warehouse_id === wh)
+        .map((r: any) => r.category_name),
+    );
+    const hiddenProdIds = new Set(
+      (hProds || [])
+        .filter((r: any) => !r.warehouse_id || r.warehouse_id === wh)
+        .map((r: any) => r.product_id),
+    );
 
     // Article visible : actif + prix B2C > 0 + non masqué + catégorie non masquée
     const visibleProds = ((allProds || []) as any[]).filter((p) => {
