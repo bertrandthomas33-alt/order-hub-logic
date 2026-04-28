@@ -69,6 +69,19 @@ export function PosArticlesTab() {
   const toggleCat = (id: string) =>
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
 
+  const updateCategoryTva = async (categoryId: string, tva: number) => {
+    const { error } = await supabase
+      .from('categories')
+      .update({ tva_rate: tva })
+      .eq('id', categoryId);
+    if (error) {
+      toast.error('Échec de la mise à jour de la TVA');
+      return;
+    }
+    setCategories((prev) => prev.map((c) => (c.id === categoryId ? { ...c, tva_rate: tva } : c)));
+    toast.success('TVA mise à jour');
+  };
+
   const savePrice = async (p: Product) => {
     const raw = editingPrice[p.id];
     if (raw === undefined) return;
