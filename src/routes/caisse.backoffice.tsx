@@ -1,10 +1,15 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Receipt, CreditCard, Banknote, TrendingUp, Package, Settings } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Receipt, CreditCard, Banknote, TrendingUp, Package, Settings, BarChart3, FileText, CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PosArticlesTab } from '@/components/caisse/PosArticlesTab';
