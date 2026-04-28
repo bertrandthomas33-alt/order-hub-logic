@@ -6,12 +6,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Search, Plus, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Category {
   id: string;
   name: string;
   warehouse_id: string;
+  tva_rate: number;
 }
+
+const TVA_OPTIONS = [5.5, 10, 20] as const;
 
 interface Product {
   id: string;
