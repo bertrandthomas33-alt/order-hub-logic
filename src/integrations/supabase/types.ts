@@ -293,16 +293,19 @@ export type Database = {
           category_name: string
           created_at: string
           id: string
+          warehouse_id: string | null
         }
         Insert: {
           category_name: string
           created_at?: string
           id?: string
+          warehouse_id?: string | null
         }
         Update: {
           category_name?: string
           created_at?: string
           id?: string
+          warehouse_id?: string | null
         }
         Relationships: []
       }
@@ -311,16 +314,19 @@ export type Database = {
           created_at: string
           id: string
           product_id: string
+          warehouse_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           product_id: string
+          warehouse_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           product_id?: string
+          warehouse_id?: string | null
         }
         Relationships: []
       }
