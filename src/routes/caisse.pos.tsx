@@ -146,6 +146,30 @@ function CaisseEnregistreuse() {
   };
 
   const fetchCategoriesAndProducts = async () => {
+    // Récupère la config POS assignée au client connecté
+    let configurationId: string | null = null;
+    if (clientId) {
+      const { data: cl } = await supabase
+        .from('clients')
+        .select('pos_configuration_id')
+        .eq('id', clientId)
+        .maybeSingle();
+      configurationId = (cl as any)?.pos_configuration_id ?? null;
+    }
+
+    const hiddenCatsPromise = configurationId
+      ? supabase
+          .from('pos_configuration_hidden_categories')
+          .select('category_name')
+          .eq('configuration_id', configurationId)
+      : Promise.resolve({ data: [] as { category_name: string }[] });
+    const hiddenProdsPromise = configurationId
+      ? supabase
+          .from('pos_configuration_hidden_products')
+          .select('product_id')
+          .eq('configuration_id', configurationId)
+      : Promise.resolve({ data: [] as { product_id: string }[] });
+
     const [{ data: cats }, { data: allProds }, { data: hCats }, { data: hProds }] =
       await Promise.all([
         supabase.from('categories').select('id, name, warehouse_id').order('name'),
@@ -153,8 +177,8 @@ function CaisseEnregistreuse() {
           .from('products')
           .select('id, name, category_id, price_b2c, price, image_url, active')
           .order('name'),
-        supabase.from('pos_hidden_categories').select('category_name, client_id'),
-        supabase.from('pos_hidden_products').select('product_id, client_id'),
+        hiddenCatsPromise,
+        hiddenProdsPromise,
       ]);
     const catRows = cats || [];
     setCategoryRows(catRows);
@@ -166,17 +190,11 @@ function CaisseEnregistreuse() {
       return;
     }
 
-    // Filtrage : règles globales (client_id NULL) + règles du point de vente connecté
-    const cid = clientId || null;
     const hiddenCatNames = new Set(
-      (hCats || [])
-        .filter((r: any) => !r.client_id || r.client_id === cid)
-        .map((r: any) => r.category_name),
+      ((hCats as { category_name: string }[]) || []).map((r) => r.category_name),
     );
     const hiddenProdIds = new Set(
-      (hProds || [])
-        .filter((r: any) => !r.client_id || r.client_id === cid)
-        .map((r: any) => r.product_id),
+      ((hProds as { product_id: string }[]) || []).map((r) => r.product_id),
     );
 
     // Article visible : actif + prix B2C > 0 + non masqué + catégorie non masquée

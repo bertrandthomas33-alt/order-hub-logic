@@ -92,6 +92,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          pos_configuration_id: string | null
           updated_at: string
           user_id: string
         }
@@ -104,6 +105,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          pos_configuration_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -116,10 +118,19 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          pos_configuration_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_pos_configuration_id_fkey"
+            columns: ["pos_configuration_id"]
+            isOneToOne: false
+            referencedRelation: "pos_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ingredients: {
         Row: {
@@ -288,45 +299,85 @@ export type Database = {
           },
         ]
       }
-      pos_hidden_categories: {
+      pos_configuration_hidden_categories: {
         Row: {
           category_name: string
-          client_id: string | null
+          configuration_id: string
           created_at: string
           id: string
         }
         Insert: {
           category_name: string
-          client_id?: string | null
+          configuration_id: string
           created_at?: string
           id?: string
         }
         Update: {
           category_name?: string
-          client_id?: string | null
+          configuration_id?: string
           created_at?: string
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pos_configuration_hidden_categories_configuration_id_fkey"
+            columns: ["configuration_id"]
+            isOneToOne: false
+            referencedRelation: "pos_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      pos_hidden_products: {
+      pos_configuration_hidden_products: {
         Row: {
-          client_id: string | null
+          configuration_id: string
           created_at: string
           id: string
           product_id: string
         }
         Insert: {
-          client_id?: string | null
+          configuration_id: string
           created_at?: string
           id?: string
           product_id: string
         }
         Update: {
-          client_id?: string | null
+          configuration_id?: string
           created_at?: string
           id?: string
           product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_configuration_hidden_products_configuration_id_fkey"
+            columns: ["configuration_id"]
+            isOneToOne: false
+            referencedRelation: "pos_configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_configurations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
