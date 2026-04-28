@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, ChevronRight, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Category {
   id: string;
@@ -59,6 +60,10 @@ export function PosArticlesTab() {
   const catName = (id: string) => categories.find((c) => c.id === id)?.name || '—';
 
   const [editingPrice, setEditingPrice] = useState<Record<string, string>>({});
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const toggleCat = (id: string) =>
+    setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const savePrice = async (p: Product) => {
     const raw = editingPrice[p.id];
