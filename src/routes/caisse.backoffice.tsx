@@ -4,6 +4,7 @@ import { ArrowLeft, Receipt, CreditCard, Banknote, TrendingUp, Package, Settings
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PosArticlesTab } from '@/components/caisse/PosArticlesTab';
