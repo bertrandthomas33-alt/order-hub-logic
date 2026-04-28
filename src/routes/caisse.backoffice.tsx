@@ -4,6 +4,7 @@ import { ArrowLeft, Receipt, CreditCard, Banknote, TrendingUp, Package, Settings
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PosArticlesTab } from '@/components/caisse/PosArticlesTab';
@@ -90,6 +91,17 @@ function TicketsPanel() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'today' | 'week' | 'all'>('today');
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clientFilter, setClientFilter] = useState<string>('all');
+
+  useEffect(() => {
+    supabase
+      .from('clients')
+      .select('id, name')
+      .eq('active', true)
+      .order('name')
+      .then(({ data }) => setClients(data || []));
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -109,6 +121,10 @@ function TicketsPanel() {
         query = query.gte('date', start.toISOString());
       }
 
+      if (clientFilter !== 'all') {
+        query = query.eq('client_id', clientFilter);
+      }
+
       const { data, error } = await query.limit(500);
       if (error) {
         toast.error('Erreur de chargement');
@@ -118,7 +134,7 @@ function TicketsPanel() {
       setLoading(false);
     };
     load();
-  }, [filter]);
+  }, [filter, clientFilter]);
 
   const totalAll = tickets.reduce((s, t) => s + Number(t.total), 0);
   const totalCard = tickets
@@ -128,9 +144,11 @@ function TicketsPanel() {
     .filter((t) => t.payment_method === 'cash')
     .reduce((s, t) => s + Number(t.total), 0);
 
+  const clientNameById = new Map(clients.map((c) => [c.id, c.name]));
+
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {(['today', 'week', 'all'] as const).map((f) => (
           <Button
             key={f}
@@ -141,6 +159,19 @@ function TicketsPanel() {
             {f === 'today' ? "Aujourd'hui" : f === 'week' ? '7 derniers jours' : 'Tout'}
           </Button>
         ))}
+        <div className="ml-auto">
+          <Select value={clientFilter} onValueChange={setClientFilter}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Point de vente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les points de vente</SelectItem>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -165,6 +196,7 @@ function TicketsPanel() {
                 <tr>
                   <th className="text-left px-4 py-2">N° ticket</th>
                   <th className="text-left px-4 py-2">Date</th>
+                  <th className="text-left px-4 py-2">Point de vente</th>
                   <th className="text-left px-4 py-2">Paiement</th>
                   <th className="text-right px-4 py-2">HT</th>
                   <th className="text-right px-4 py-2">TVA</th>
@@ -177,6 +209,9 @@ function TicketsPanel() {
                     <td className="px-4 py-2 font-mono text-xs">{t.ticket_number}</td>
                     <td className="px-4 py-2 text-muted-foreground">
                       {new Date(t.date).toLocaleString('fr-FR')}
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {clientNameById.get(t.client_id) || '—'}
                     </td>
                     <td className="px-4 py-2">
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${t.payment_method === 'card' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
