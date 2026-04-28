@@ -203,10 +203,13 @@ export function PosArticlesTab() {
                   <Fragment key={group.category.id}>
                     <tr
                       key={`h-${group.category.id}`}
-                      className="bg-muted/30 cursor-pointer hover:bg-muted/50"
-                      onClick={() => toggleCat(group.category.id)}
+                      className="bg-muted/30 hover:bg-muted/50"
                     >
-                      <td colSpan={4} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <td
+                        colSpan={3}
+                        className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground cursor-pointer"
+                        onClick={() => toggleCat(group.category.id)}
+                      >
                         <span className="inline-flex items-center gap-2">
                           <ChevronRight
                             className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
@@ -216,6 +219,25 @@ export function PosArticlesTab() {
                             ({group.items.length})
                           </span>
                         </span>
+                      </td>
+                      <td className="px-4 py-1 text-center">
+                        {group.category.id !== '__none__' && (
+                          <Select
+                            value={String((group.category as Category).tva_rate ?? 10)}
+                            onValueChange={(v) => updateCategoryTva(group.category.id, parseFloat(v))}
+                          >
+                            <SelectTrigger className="h-7 w-24 mx-auto text-xs" onClick={(e) => e.stopPropagation()}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {TVA_OPTIONS.map((t) => (
+                                <SelectItem key={t} value={String(t)}>
+                                  TVA {t}%
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </td>
                     </tr>
                     {!isCollapsed && group.items.map((p) => {
