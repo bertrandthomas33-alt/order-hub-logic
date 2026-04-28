@@ -168,9 +168,9 @@ export function PosConfigTab() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={GLOBAL}>Tous les points de vente (défaut)</SelectItem>
-              {warehouses.map((w) => (
-                <SelectItem key={w.id} value={w.id}>
-                  {w.name}
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectContent>
