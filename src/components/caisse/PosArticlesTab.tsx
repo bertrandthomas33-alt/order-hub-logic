@@ -140,6 +140,25 @@ export function PosArticlesTab() {
         <div className="text-sm text-muted-foreground ml-auto">
           {visibleCount} / {products.length} visibles sur le POS
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const all: Record<string, boolean> = {};
+            [...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__' } }] : [])].forEach(
+              (g: any) => (all[g.category.id] = true)
+            );
+            setCollapsed(all);
+          }}
+          className="gap-1"
+        >
+          <ChevronsDownUp className="h-4 w-4" />
+          Tout plier
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setCollapsed({})} className="gap-1">
+          <ChevronsUpDown className="h-4 w-4" />
+          Tout déplier
+        </Button>
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -161,14 +180,28 @@ export function PosArticlesTab() {
                 </tr>
               </thead>
               <tbody>
-                {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => (
+                {[...grouped, ...(uncategorized.length > 0 ? [{ category: { id: '__none__', name: 'Sans catégorie', warehouse_id: '' }, items: uncategorized }] : [])].map((group) => {
+                  const isCollapsed = !!collapsed[group.category.id];
+                  return (
                   <Fragment key={group.category.id}>
-                    <tr key={`h-${group.category.id}`} className="bg-muted/30">
+                    <tr
+                      key={`h-${group.category.id}`}
+                      className="bg-muted/30 cursor-pointer hover:bg-muted/50"
+                      onClick={() => toggleCat(group.category.id)}
+                    >
                       <td colSpan={4} className="px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {group.category.name} <span className="text-muted-foreground/60 font-normal normal-case">({group.items.length})</span>
+                        <span className="inline-flex items-center gap-2">
+                          <ChevronRight
+                            className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                          />
+                          {group.category.name}{' '}
+                          <span className="text-muted-foreground/60 font-normal normal-case">
+                            ({group.items.length})
+                          </span>
+                        </span>
                       </td>
                     </tr>
-                    {group.items.map((p) => {
+                    {!isCollapsed && group.items.map((p) => {
                       const visible = computeVisible(p);
                       const isEditing = p.id in editingPrice;
                       return (
