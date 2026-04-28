@@ -59,11 +59,11 @@ function CaisseBackoffice() {
       </div>
 
       <div className="flex-1 p-6 max-w-7xl mx-auto w-full">
-        <Tabs defaultValue="tickets" className="space-y-6">
+        <Tabs defaultValue="rapport" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="tickets" className="gap-2">
+            <TabsTrigger value="rapport" className="gap-2">
               <Receipt className="h-4 w-4" />
-              Tickets
+              Rapport
             </TabsTrigger>
             <TabsTrigger value="articles" className="gap-2">
               <Package className="h-4 w-4" />
@@ -75,8 +75,8 @@ function CaisseBackoffice() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="tickets">
-            <TicketsPanel />
+          <TabsContent value="rapport">
+            <RapportPanel />
           </TabsContent>
 
           <TabsContent value="articles">
