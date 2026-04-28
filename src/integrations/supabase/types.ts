@@ -291,42 +291,42 @@ export type Database = {
       pos_hidden_categories: {
         Row: {
           category_name: string
+          client_id: string | null
           created_at: string
           id: string
-          warehouse_id: string | null
         }
         Insert: {
           category_name: string
+          client_id?: string | null
           created_at?: string
           id?: string
-          warehouse_id?: string | null
         }
         Update: {
           category_name?: string
+          client_id?: string | null
           created_at?: string
           id?: string
-          warehouse_id?: string | null
         }
         Relationships: []
       }
       pos_hidden_products: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           product_id: string
-          warehouse_id: string | null
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           product_id: string
-          warehouse_id?: string | null
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           product_id?: string
-          warehouse_id?: string | null
         }
         Relationships: []
       }
