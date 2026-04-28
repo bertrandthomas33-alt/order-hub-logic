@@ -196,6 +196,7 @@ function TicketsPanel() {
                 <tr>
                   <th className="text-left px-4 py-2">N° ticket</th>
                   <th className="text-left px-4 py-2">Date</th>
+                  <th className="text-left px-4 py-2">Point de vente</th>
                   <th className="text-left px-4 py-2">Paiement</th>
                   <th className="text-right px-4 py-2">HT</th>
                   <th className="text-right px-4 py-2">TVA</th>
@@ -208,6 +209,9 @@ function TicketsPanel() {
                     <td className="px-4 py-2 font-mono text-xs">{t.ticket_number}</td>
                     <td className="px-4 py-2 text-muted-foreground">
                       {new Date(t.date).toLocaleString('fr-FR')}
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground">
+                      {clientNameById.get(t.client_id) || '—'}
                     </td>
                     <td className="px-4 py-2">
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${t.payment_method === 'card' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
