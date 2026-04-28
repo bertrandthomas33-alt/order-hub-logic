@@ -153,8 +153,8 @@ function CaisseEnregistreuse() {
           .from('products')
           .select('id, name, category_id, price_b2c, price, image_url, active')
           .order('name'),
-        supabase.from('pos_hidden_categories').select('category_name, warehouse_id'),
-        supabase.from('pos_hidden_products').select('product_id, warehouse_id'),
+        supabase.from('pos_hidden_categories').select('category_name, client_id'),
+        supabase.from('pos_hidden_products').select('product_id, client_id'),
       ]);
     const catRows = cats || [];
     setCategoryRows(catRows);
@@ -166,17 +166,16 @@ function CaisseEnregistreuse() {
       return;
     }
 
-    // Filtrage par warehouse : on applique les règles globales (warehouse_id NULL)
-    // + celles du point de vente sélectionné
-    const wh = selectedWarehouse || null;
+    // Filtrage : règles globales (client_id NULL) + règles du point de vente connecté
+    const cid = clientId || null;
     const hiddenCatNames = new Set(
       (hCats || [])
-        .filter((r: any) => !r.warehouse_id || r.warehouse_id === wh)
+        .filter((r: any) => !r.client_id || r.client_id === cid)
         .map((r: any) => r.category_name),
     );
     const hiddenProdIds = new Set(
       (hProds || [])
-        .filter((r: any) => !r.warehouse_id || r.warehouse_id === wh)
+        .filter((r: any) => !r.client_id || r.client_id === cid)
         .map((r: any) => r.product_id),
     );
 
