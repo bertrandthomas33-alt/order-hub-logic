@@ -125,7 +125,7 @@ function CaisseEnregistreuse() {
 
   useEffect(() => {
     fetchCategoriesAndProducts();
-  }, [selectedWarehouse]);
+  }, [clientId]);
 
   const fetchWarehouses = async () => {
     if (role === 'pdv' && clientId) {
