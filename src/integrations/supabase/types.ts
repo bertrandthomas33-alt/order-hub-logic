@@ -20,6 +20,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          tva_rate: number
           updated_at: string
           warehouse_id: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          tva_rate?: number
           updated_at?: string
           warehouse_id: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          tva_rate?: number
           updated_at?: string
           warehouse_id?: string
         }
