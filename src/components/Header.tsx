@@ -34,11 +34,11 @@ export function Header() {
             </div>
           </Link>
           {(role === 'pdv' || role === 'admin') && (
-            <Link to="/caisse" className="flex items-center gap-2 ml-2 pl-3 border-l border-border group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary group-hover:bg-secondary/80 transition-colors">
-                <span className="text-base font-bold text-secondary-foreground">C</span>
+            <Link to="/caisse" className="flex items-center gap-3 ml-2 pl-3 border-l border-border">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+                <span className="text-lg font-bold text-secondary-foreground">C</span>
               </div>
-              <span className="hidden sm:inline font-heading text-xs font-medium uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Caisse</span>
+              <span className="hidden sm:inline font-heading text-lg font-medium text-muted-foreground">Caisse</span>
             </Link>
           )}
         </div>
