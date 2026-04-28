@@ -42,7 +42,7 @@ export function PosArticlesTab() {
     try {
       const { data: cats } = await supabase
         .from('categories')
-        .select('id, name, warehouse_id')
+        .select('id, name, warehouse_id, tva_rate')
         .order('name');
       setCategories((cats || []) as Category[]);
 
