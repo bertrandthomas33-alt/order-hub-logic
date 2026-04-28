@@ -66,14 +66,14 @@ export function PosConfigTab() {
             .from('products')
             .select('id, name, category_id, price_b2c, active')
             .order('name'),
-          supabase.from('warehouses').select('id, name').eq('active', true).order('name'),
+          supabase.from('clients').select('id, name').eq('active', true).order('name'),
           supabase.from('pos_hidden_categories').select('category_name, client_id'),
           supabase.from('pos_hidden_products').select('product_id, client_id'),
         ]);
 
       setCategories((cats || []) as Category[]);
       setProducts((prods || []) as Product[]);
-      setWarehouses((whs || []) as Warehouse[]);
+      setClients((whs || []) as Client[]);
       setHiddenCats((hc || []) as HiddenCatRow[]);
       setHiddenProds((hp || []) as HiddenProdRow[]);
     } catch (e) {
