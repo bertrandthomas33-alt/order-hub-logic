@@ -45,7 +45,7 @@ const GLOBAL = '__global__';
 export function PosConfigTab() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [hiddenCats, setHiddenCats] = useState<HiddenCatRow[]>([]);
   const [hiddenProds, setHiddenProds] = useState<HiddenProdRow[]>([]);
   const [scope, setScope] = useState<string>(GLOBAL); // GLOBAL ou client_id
